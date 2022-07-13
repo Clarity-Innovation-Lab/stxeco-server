@@ -28,6 +28,7 @@ target/
 build/
 /volumes
 /dist
+/stxeco-api/bin
 
 ### VS Code ###
 .vscode/
