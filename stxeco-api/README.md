@@ -5,12 +5,32 @@ and more flexible.
 
 ## Build
 
-Build and skip/not skip tests
+Build from the root directory
+
+```bash
+./build.sh
+```
+
+or directly..
 
 ```bash
 mvn -Dmaven.test.skip=true clean install
+docker-compose build
+docker-compose up -d
 ```
 
+## Deployment
+
+Deploy on testnet using
+
 ```bash
-mvn -Dmaven.test.skip=true clean install
+./deploy-stxeco.sh
 ```
+
+Deploy on mainnet using
+
+```bash
+./deploy-stxeco.sh prod
+```
+
+Note: Requires your ssh key to be installed on the server.
