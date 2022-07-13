@@ -22,7 +22,7 @@ services:
     ports:
       - 27020:27017
     command: mongod --bind_ip_all --logpath=/dev/null
-  stxecoapi:
+  stxeco_api:
     image: mijoco/stxeco_api:latest
     container_name: "stxeco_api"
     environment:
@@ -34,7 +34,7 @@ services:
       - "8380:8080"
     links:
       - mongodb
-  stxecoexpress:
+  stxeco_express:
     image: mijoco/stxeco_express:latest
     container_name: "stxeco_express"
     environment:
