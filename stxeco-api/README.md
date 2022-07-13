@@ -14,7 +14,9 @@ Build from the root directory
 or directly..
 
 ```bash
-mvn -Dmaven.test.skip=true clean install
+cd stxeco-api
+mvn clean install # or mvn -Dmaven.test.skip=true clean install
+cd ..
 docker-compose build
 docker-compose up -d
 ```
