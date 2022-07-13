@@ -1,0 +1,46 @@
+version: '3.9'
+
+services:
+  mongodb:
+    image: mongo:4.2
+    container_name: "stxeco_mongodb"
+    environment:
+      - MONGO_DATA_DIR=/data/db
+      - MONGO_LOG_DIR=/dev/null
+      #- MONGO_INITDB_ROOT_USERNAME: ${MONGO_INITDB_ROOT_USERNAME}
+      #- MONGO_INITDB_ROOT_PASSWORD: ${MONGO_INITDB_ROOT_PASSWORD}
+    volumes:
+      - ./volumes/data/db:/data/db
+    ports:
+      - 27020:27017
+    command: mongod --bind_ip_all --logpath=/dev/null
+  stxeco_api:
+    build:
+      context: ./stxeco-api
+    image: mijoco/stxeco_api
+    container_name: "stxeco_api"
+    environment:
+      - spring.profiles.active=${spring_profiles_active}
+      - GITHUB_PAT=${GITHUB_PAT}
+      - JAVA_OPTS=-Xm2g -Xms2g
+    ports:
+      - "8204:8104"
+      - "8380:8080"
+    links:
+      - mongodb
+  stxeco_express:
+    build:
+      context: ./stxeco-express
+    image: mijoco/stxeco_express
+    container_name: "stxeco_express"
+    environment:
+      - STXECO_API=${STXECO_API}
+      - STACKS_NETWORK=${STACKS_NETWORK}
+      - STACKS_PUBKEY=${STACKS_PUBKEY}
+      - STACKS_PRIKEY=${STACKS_PRIKEY}
+      - STACKS_SIGNER_PUBKEY=${STACKS_SIGNER_PUBKEY}
+      - STACKS_SIGNER_PRIKEY=${STACKS_SIGNER_PRIKEY}
+      - STACKS_ALLOWED_IP=${STACKS_ALLOWED_IP}
+      - OPENNODE_API_KEY_SM=${OPENNODE_API_KEY_SM}
+    ports:
+      - "8280:8080"
