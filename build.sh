@@ -19,6 +19,10 @@ echo \n\n\n---------------------------------------------------------------------
 echo building images;
 echo -----------------------------------------------------------------------------------;
 cp .env.local .env
+if [ "$SERVICE" == "stxeco_api" ]; then
+  mvn -f ./stxeco-api/pom.xml -Dmaven.test.skip=true clean install
+fi
+
 if [ -z "${SERVICE}" ]; then
   docker-compose down
   #docker rm $SERVICE

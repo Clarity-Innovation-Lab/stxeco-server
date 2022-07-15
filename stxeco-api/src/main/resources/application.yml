@@ -7,7 +7,7 @@ eco-stx:
    mongo:
       mongoIp: mongodb://mongodb
       mongoPort: 27017
-      mongoDbName: mesh
+      mongoDbName: daoapi
    binance:
       rate-path: https://api.binance.com/api/v3/ticker/24hr
       fiat-list: GBP,USD,EUR,AUD,JPY,HKD
@@ -22,7 +22,7 @@ eco-stx:
       stacks-path: http://localhost:20443
       admin-contract-address: ST1ESYCGJB5Z5NBHS39XPC70PGC14WAQK5XXNQYDW
       admin-contract-name: appmap-v1
-      stacksmate: http://docker.for.mac.localhost:8108
+      daojsapi: http://docker.for.mac.localhost:8280
 
 ---
 
@@ -45,6 +45,7 @@ eco-stx:
    stax:
       base-path: http://172.17.0.1:20443
       blockchain-api-path: http://172.17.0.1:3999
+      daojsapi: http://172.17.0.1:8280
 
 ---
 
@@ -74,7 +75,7 @@ eco-stx:
       stacks-path: https://stacks-node-api.testnet.stacks.co
       admin-contract-address: ST1NXBK3K5YYMD6FD41MVNP3JS1GABZ8TRVX023PT
       admin-contract-name: appmap-v1
-      stacksmate: http://stacksmate:8080
+      daojsapi: http://daojsapi:8280
 
 ---
 
@@ -93,5 +94,5 @@ eco-stx:
       stacks-path: https://stacks-node-api.mainnet.stacks.co
       admin-contract-address: SP3QSAJQ4EA8WXEDSRRKMZZ29NH91VZ6C5X88FGZQ
       admin-contract-name: appmap-v1
-      stacksmate: http://stacksmate:8080
+      daojsapi: http://daojsapi:8280
    

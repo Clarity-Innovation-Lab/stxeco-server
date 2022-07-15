@@ -15,8 +15,12 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.client.RestOperations;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+import eco.stx.edao.eco.proposals.service.domain.ProposalData;
+import eco.stx.edao.eco.proposals.service.domain.clarity.TypeValue;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -39,7 +43,7 @@ public class ApiHelper {
 	@Value("${eco-stx.stax.base-path}") String basePath;
 	@Value("${eco-stx.stax.blockchain-api-path}") String sidecarPath;
 	@Value("${eco-stx.stax.stacks-path}") String remoteBasePath;
-	@Value("${eco-stx.stax.blockchain-api-path}") String blockchainApiPath;
+	@Value("${eco-stx.stax.daojsapi}") String daojsapi;
 
 	public static String encodeValue(String value) {
 	    try {
@@ -47,6 +51,37 @@ public class ApiHelper {
 		} catch (UnsupportedEncodingException e) {
 			return value;
 		}
+	}
+
+	public String cvConversion(String param) {
+		String url = daojsapi + "/daojsapi" + param;
+		HttpEntity<String> requestEntity = new HttpEntity<String>(new HttpHeaders());
+		ResponseEntity<String> response = null;
+		response = restTemplate.exchange(url, HttpMethod.GET, requestEntity, String.class);
+		return response.getBody();
+	}
+
+	public ProposalData deserialise(String functionName, String contractId, String json) throws JsonMappingException, JsonProcessingException {
+		ReadResult contractRead = (ReadResult)mapper.readValue(json, new TypeReference<ReadResult>() {});
+		String param = "/to-json/" + contractRead.getResult();
+		json = cvConversion(param);
+		TypeValue typeValue = (TypeValue)mapper.readValue(json, new TypeReference<TypeValue>() {});
+		if (typeValue.getValue() == null) return null;
+		//DaoProperties proposalData = (DaoProperties)mapper.readValue(typeValue.getValue(), new TypeReference<DaoProperties>() {});
+		return ProposalData.fromClarity(typeValue.getValue().getValue());
+//		DaoProperties p = null;
+//		try {
+//			Map<String, Object> data = clarityDeserialiser.deserialise("get-proposal-data", json);
+//			if (data != null) {
+//				Map<String, Object> data1 = (Map) data.get(functionName);
+//				if (data1 != null) {
+//					p = DaoProperties.fromMap((Map) data.get(functionName), contractId);
+//				}
+//			}
+//		} catch (Exception e) {
+//			logger.error(e);
+//		}
+//		return p;
 	}
 
 	public String fetchFromApi(Principal principal) throws JsonProcessingException {

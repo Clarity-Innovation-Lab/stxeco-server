@@ -1,6 +1,5 @@
 package eco.stx.edao.eco.proposals.api;
 
-import java.util.ArrayList;
 import java.util.List;
 
 import org.apache.logging.log4j.LogManager;
@@ -8,12 +7,9 @@ import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.http.HttpEntity;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.HttpMethod;
-import org.springframework.http.ResponseEntity;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.scheduling.annotation.EnableScheduling;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.web.client.RestOperations;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -42,11 +38,11 @@ public class ProposalWatcher {
 	@Autowired private ApiHelper apiHelper;
 	@Autowired private ObjectMapper mapper;
 	@Autowired private ProposalRepository proposalRepository;
-	@Value("${eco-stx.stax.stacksmate}") String basePath;
+	@Value("${eco-stx.stax.daojsapi}") String basePath;
 	@Autowired private RestOperations restTemplate;
 	@Autowired private ClarityDeserialiser clarityDeserialiser;
 
-	//@Scheduled(fixedDelay=60000)
+	@Scheduled(fixedDelay=60000)
 	public void processProposals() throws JsonProcessingException {
 		// Principal path = new Principal("GET", "/extended/v1/contract/by_trait?trait_abi=" + GitHubHelper.encodeValue(ExtensionTrait.trait), null);
 		Principal path = new Principal("GET", "/extended/v1/contract/by_trait?trait_abi={trait}", null);
@@ -58,7 +54,7 @@ public class ProposalWatcher {
 		}
 	}
 	
-	//@Scheduled(fixedDelay=90000)
+	@Scheduled(fixedDelay=90000)
 	public void processProposalData() throws JsonProcessingException {
 		List<Proposal> props = proposalRepository.findAll();
 		for (Proposal p : props) {
@@ -98,11 +94,9 @@ public class ProposalWatcher {
 		String contractAddress = p.getContractId().split("\\.")[0];
 		String contractName = "ede001-proposal-voting"; // p.getContractId().split("\\.")[1];
 		String functionName = "get-proposal-data";
-		List<String> functionArgs = new ArrayList<String>();
-		String param = "/proposal-data/" + contractAddress + "/" + p.getContractId().split("\\.")[1];
-		String arg0 = cvConversion(param);
+		String param = "/contract-principal/" + contractAddress + "/" + p.getContractId().split("\\.")[1];
+		String arg0 = apiHelper.cvConversion(param);
 		logger.info("Extension argument: " + arg0);
-		functionArgs.add(arg0);
 
 		PostData postd = new PostData();
 		postd.setArguments(new String[] { arg0 });
@@ -116,36 +110,14 @@ public class ProposalWatcher {
 			proposalRepository.save(p);
 		}
  	}
-	
-	private String cvConversion(String param) {
-		String url = basePath + "/stacksmate" + param;
-		HttpEntity<String> requestEntity = new HttpEntity<String>(new HttpHeaders());
-		ResponseEntity<String> response = null;
-		response = restTemplate.exchange(url, HttpMethod.GET, requestEntity, String.class);
-		return response.getBody();
-	}
-	
+		
 	private ProposalData deserialise(String functionName, String contractId, String json) throws JsonMappingException, JsonProcessingException {
 		ReadResult contractRead = (ReadResult)mapper.readValue(json, new TypeReference<ReadResult>() {});
 		String param = "/to-json/" + contractRead.getResult();
-		json = cvConversion(param);
+		json = apiHelper.cvConversion(param);
 		TypeValue typeValue = (TypeValue)mapper.readValue(json, new TypeReference<TypeValue>() {});
 		if (typeValue.getValue() == null) return null;
-		//ClarityProposalData proposalData = (ClarityProposalData)mapper.readValue(typeValue.getValue(), new TypeReference<ClarityProposalData>() {});
 		return ProposalData.fromClarity(typeValue.getValue().getValue());
-//		ClarityProposalData p = null;
-//		try {
-//			Map<String, Object> data = clarityDeserialiser.deserialise("get-proposal-data", json);
-//			if (data != null) {
-//				Map<String, Object> data1 = (Map) data.get(functionName);
-//				if (data1 != null) {
-//					p = ClarityProposalData.fromMap((Map) data.get(functionName), contractId);
-//				}
-//			}
-//		} catch (Exception e) {
-//			logger.error(e);
-//		}
-//		return p;
 	}
 
 }

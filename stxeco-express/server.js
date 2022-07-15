@@ -9,6 +9,11 @@ const {
 const {
   uintCV,
   standardPrincipalCV,
+  contractPrincipalCV,
+  serializeCV,
+  deserializeCV,
+  stringAsciiCV,
+  cvToJSON,
   listCV,
   tupleCV,
   getNonce,
@@ -135,13 +140,13 @@ const broadcast = function (transaction, recipient, microstx) {
     const headers = {
       'Content-Type': 'application/octet-stream'
     }
-    axios.post(STXECO_API + '/mesh/v2/broadcast', txdata, { headers: headers }).then(response => {
+    axios.post(STXECO_API + '/daoapi/v2/broadcast', txdata, { headers: headers }).then(response => {
       console.log('Successfully sent transaction from: ' + PUBKEY);
       console.log('Amount (micro stx): ' + microstx);
       console.log('To: ' + recipient);
       resolve(response.data)
     }).catch((error) => {
-      console.log('Failed to post to mesh for broadcast');
+      console.log('Failed to post to daoapi for broadcast');
       reject(error)
     })
   })
@@ -382,7 +387,77 @@ app.get('/', (req, res) => {
   res.send('hi there...');
 });
 
-app.get('/stacksmate/signme/:assetHash', (req, res) => {
+app.get('/daojsapi/extension-data/:address/:name', (req, res) => {
+  const ip = req.headers['x-forwarded-for'] || req.socket.remoteAddress;
+  const contractCV = contractPrincipalCV(req.params.address, req.params.name)
+  const contractCVS = serializeCV(contractCV)
+  const contractCVSH = contractCVS.toString('hex')
+  console.log(ip); // ip address of the user
+  if (ip.indexOf(ALLOWED_IP) > -1) {
+    res.send(contractCVSH);
+  } else {
+    res.sendStatus(401);
+  }
+});
+app.get('/daojsapi/contract-principal/:address/:name', (req, res) => {
+  const ip = req.headers['x-forwarded-for'] || req.socket.remoteAddress;
+  const contractCV = contractPrincipalCV(req.params.address, req.params.name)
+  const contractCVS = serializeCV(contractCV)
+  const contractCVSH = contractCVS.toString('hex')
+  console.log(ip); // ip address of the user
+  if (ip.indexOf(ALLOWED_IP) > -1) {
+    res.send(contractCVSH);
+  } else {
+    res.sendStatus(401);
+  }
+});
+app.get('/daojsapi/uint/:param', (req, res) => {
+  const ip = req.headers['x-forwarded-for'] || req.socket.remoteAddress;
+  const contractCV = uintCV(req.params.param)
+  const contractCVS = serializeCV(contractCV)
+  const contractCVSH = contractCVS.toString('hex')
+  console.log(ip); // ip address of the user
+  if (ip.indexOf(ALLOWED_IP) > -1) {
+    res.send(contractCVSH);
+  } else {
+    res.sendStatus(401);
+  }
+});
+app.get('/daojsapi/principal/:address', (req, res) => {
+  const ip = req.headers['x-forwarded-for'] || req.socket.remoteAddress;
+  const contractCV = standardPrincipalCV(req.params.address)
+  const contractCVS = serializeCV(contractCV)
+  const contractCVSH = contractCVS.toString('hex')
+  console.log(ip); // ip address of the user
+  if (ip.indexOf(ALLOWED_IP) > -1) {
+    res.send(contractCVSH);
+  } else {
+    res.sendStatus(401);
+  }
+});
+app.get('/daojsapi/string-ascii/:param', (req, res) => {
+  const ip = req.headers['x-forwarded-for'] || req.socket.remoteAddress;
+  const param = stringAsciiCV(req.params.param)
+  const buffer = serializeCV(param).toString('hex')
+  console.log(ip); // ip address of the user
+  if (ip.indexOf(ALLOWED_IP) > -1) {
+    res.send(buffer);
+  } else {
+    res.sendStatus(401);
+  }
+});
+app.get('/daojsapi/to-json/:result', (req, res) => {
+  const ip = req.headers['x-forwarded-for'] || req.socket.remoteAddress;
+  const result = cvToJSON(deserializeCV(req.params.result))
+  console.log(ip); // ip address of the user
+  if (ip.indexOf(ALLOWED_IP) > -1) {
+    res.send(result);
+  } else {
+    res.sendStatus(401);
+  }
+});
+
+app.get('/daojsapi/signme/:assetHash', (req, res) => {
   const ip = req.headers['x-forwarded-for'] || req.socket.remoteAddress;
   console.log(ip); // ip address of the user
   if (ip.indexOf(ALLOWED_IP) > -1) {
@@ -393,37 +468,37 @@ app.get('/stacksmate/signme/:assetHash', (req, res) => {
   }
 });
 
-app.post('/stacksmate/transfer-nft', runAsyncWrapper(async(req, res) => {
+app.post('/daojsapi/transfer-nft', runAsyncWrapper(async(req, res) => {
   const transfer = await transferNFT(req.body)
   res.send(transfer);
 }))
 
-app.post('/stacksmate/mint-nft', runAsyncWrapper(async(req, res) => {
+app.post('/daojsapi/mint-nft', runAsyncWrapper(async(req, res) => {
   const transfer = await mintNFT(req.body)
   res.send(transfer);
 }))
 
-app.post('/stacksmate/admin-mint-nft', runAsyncWrapper(async(req, res) => {
+app.post('/daojsapi/admin-mint-nft', runAsyncWrapper(async(req, res) => {
   const transfer = await adminMintNFT(req.body)
   res.send(transfer);
 }))
 
-app.post('/stacksmate/admin-mint-sft', runAsyncWrapper(async(req, res) => {
+app.post('/daojsapi/admin-mint-sft', runAsyncWrapper(async(req, res) => {
   const transfer = await adminMintSFT(req.body)
   res.send(transfer);
 }))
 
-app.post('/stacksmate/:tokenId/:sender/:recipient', runAsyncWrapper(async(req, res) => {
+app.post('/daojsapi/:tokenId/:sender/:recipient', runAsyncWrapper(async(req, res) => {
   const transfer = await makeStacksTransfer(req.params.recipient, req.params.microstx)
   res.send(transfer);
 }))
 
-app.post('/stacksmate/:recipient/:microstx', runAsyncWrapper(async(req, res) => {
+app.post('/daojsapi/:recipient/:microstx', runAsyncWrapper(async(req, res) => {
   const transfer = await makeStacksTransfer(req.params.recipient, req.params.microstx)
   res.send(transfer);
 }))
 
-app.post('/stacksmate/:recipient/:nonce/:microstx', runAsyncWrapper(async(req, res) => {
+app.post('/daojsapi/:recipient/:nonce/:microstx', runAsyncWrapper(async(req, res) => {
   let txNonce = req.params.nonce
   if (txNonce < 0) {
     txNonce = await fetchNonce()

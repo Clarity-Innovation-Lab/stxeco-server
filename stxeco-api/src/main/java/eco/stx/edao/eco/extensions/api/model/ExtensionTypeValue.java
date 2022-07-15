@@ -1,10 +1,7 @@
 package eco.stx.edao.eco.extensions.api.model;
 
-import java.util.List;
-
 import org.springframework.data.annotation.TypeAlias;
 
-import eco.stx.edao.eco.extensions.service.domain.ExtensionContract;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -18,10 +15,9 @@ import lombok.ToString;
 @ToString
 @NoArgsConstructor
 @AllArgsConstructor
-@TypeAlias(value = "ExtensionContracts")
-public class ExtensionContracts {
+@TypeAlias(value = "ExtensionTypeValue")
+public class ExtensionTypeValue {
 
-	public int limit;
-	public int offset;
-	public List<ExtensionContract> results;
+	private String type;
+	private Boolean value;
 }

@@ -1,4 +1,4 @@
-package eco.stx.edao.eco.extensions.service.domain;
+package eco.stx.edao.eco.daoProperties.service.domain;
 
 import org.springframework.data.annotation.Id;
 import org.springframework.data.annotation.TypeAlias;
@@ -15,14 +15,15 @@ import lombok.ToString;
 @Setter
 @Builder
 @ToString
-@AllArgsConstructor
 @NoArgsConstructor
-@TypeAlias(value = "Extension")
+@AllArgsConstructor
+@TypeAlias(value = "DaoProperty")
 @Document
-public class Extension {
+public class DaoProperty {
 
 	@Id private String id;
-	private ExtensionContract contract;
-	private boolean valid;
-	
+	public String value;
+	public String contractName;
+	public String functionName;
+
 }

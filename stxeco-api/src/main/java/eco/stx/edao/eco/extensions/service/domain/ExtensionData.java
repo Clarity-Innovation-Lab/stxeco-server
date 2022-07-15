@@ -19,24 +19,12 @@ import lombok.ToString;
 @TypeAlias(value = "ExtensionData")
 public class ExtensionData {
 
-	public Boolean concluded;
-	public Boolean passed;
-	public String proposer;
-	public Integer endBlockHeight;
-	public Integer startBlockHeight;
-	public Integer votesAgainst;
-	public Integer votesFor;
+	public Boolean valid;
 	
 	public static ExtensionData fromClarity(ClarityProposalData cpd) {
-		ExtensionData pd = new ExtensionData();
-		pd.setConcluded((Boolean)cpd.getConcluded().getValue());
-		pd.setPassed((Boolean)cpd.getPassed().getValue());
-		pd.setEndBlockHeight(Integer.valueOf((String)cpd.getEndBlockHeight().getValue()));
-		pd.setStartBlockHeight(Integer.valueOf((String)cpd.getStartBlockHeight().getValue()));
-		pd.setVotesFor(Integer.valueOf((String)cpd.getVotesFor().getValue()));
-		pd.setVotesAgainst(Integer.valueOf((String)cpd.getVotesAgainst().getValue()));
-		pd.setProposer((String)cpd.getProposer().getValue());
-		return pd;
+		ExtensionData extd = new ExtensionData();
+		extd.setValid((Boolean)cpd.getConcluded().getValue());
+		return extd;
 	}
 
 }

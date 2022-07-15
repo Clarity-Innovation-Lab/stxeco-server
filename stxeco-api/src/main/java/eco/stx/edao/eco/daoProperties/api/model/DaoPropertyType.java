@@ -1,4 +1,4 @@
-package eco.stx.edao.eco.proposals.service.domain.clarity;
+package eco.stx.edao.eco.daoProperties.api.model;
 
 import org.springframework.data.annotation.TypeAlias;
 
@@ -16,9 +16,10 @@ import lombok.ToString;
 @NoArgsConstructor
 @AllArgsConstructor
 @TypeAlias(value = "DaoPropertyType")
-public class CTypeValue {
+public class DaoPropertyType {
 
 	public String type;
-	public Object value;
+	public DaoPropertyTypeValue value;
+	public boolean success;
 	
 }
