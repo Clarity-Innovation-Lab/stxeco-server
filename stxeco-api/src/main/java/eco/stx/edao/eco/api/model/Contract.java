@@ -1,4 +1,4 @@
-package eco.stx.edao.eco.proposals.service.domain;
+package eco.stx.edao.eco.api.model;
 
 import org.springframework.data.annotation.TypeAlias;
 
@@ -17,8 +17,8 @@ import lombok.ToString;
 @ToString
 @NoArgsConstructor
 @AllArgsConstructor
-@TypeAlias(value = "ProposalContract")
-public class ProposalContract {
+@TypeAlias(value = "Contract")
+public class Contract {
 
 	public String abi;
 	@JsonProperty("tx_id") public String txId;

@@ -8,9 +8,9 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
-import eco.stx.edao.common.ApiHelper;
-import eco.stx.edao.common.Principal;
 import eco.stx.edao.contracts.service.domain.ContractEvents;
+import eco.stx.edao.stacks.ApiHelper;
+import eco.stx.edao.stacks.ApiFetchConfig;
 
 @Service
 public class ContractEventsServiceImpl implements ContractEventsService {
@@ -43,7 +43,7 @@ public class ContractEventsServiceImpl implements ContractEventsService {
 	}
 	
 	private String read(String path) {
-		Principal p = new Principal();
+		ApiFetchConfig p = new ApiFetchConfig();
 		p.setHttpMethod("GET");
 		p.setPath(path);
 		try {
@@ -72,7 +72,7 @@ public class ContractEventsServiceImpl implements ContractEventsService {
 //	}
 	
 //	private MintEventsBean getMintEvents(String path) {
-//		Principal p = new Principal();
+//		ApiFetchConfig p = new ApiFetchConfig();
 //		p.setHttpMethod("GET");
 //		p.setPath(path);
 //		try {

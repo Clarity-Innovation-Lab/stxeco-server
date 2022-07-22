@@ -25,5 +25,4 @@ public class DaoProperty {
 	public String value;
 	public String contractName;
 	public String functionName;
-
 }

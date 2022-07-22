@@ -28,6 +28,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 
 import eco.stx.edao.github.service.GitHubHelper;
+import eco.stx.edao.stacks.ApiHelper;
 import eco.stx.edao.stacks.service.ClarityDeserialiser;
 import eco.stx.edao.stacks.service.ClaritySerialiser;
 

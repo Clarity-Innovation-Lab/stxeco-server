@@ -1,4 +1,4 @@
-package eco.stx.edao.common;
+package eco.stx.edao.stacks;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -13,9 +13,10 @@ import lombok.ToString;
 @ToString
 @AllArgsConstructor
 @NoArgsConstructor
-public class ReadResult {
+public class ApiFetchConfig {
 
-	private String okay;
-	private String result;
+	public String httpMethod;
+	private String path;
+	private PostData postData;
 
 }

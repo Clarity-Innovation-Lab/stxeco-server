@@ -4,7 +4,7 @@ import java.util.List;
 
 import org.springframework.data.annotation.TypeAlias;
 
-import eco.stx.edao.eco.proposals.service.domain.ProposalContract;
+import eco.stx.edao.eco.api.model.Contract;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -18,10 +18,10 @@ import lombok.ToString;
 @ToString
 @NoArgsConstructor
 @AllArgsConstructor
-@TypeAlias(value = "ExtensionContracts")
+@TypeAlias(value = "ProposalContracts")
 public class ProposalContracts {
 
 	public int limit;
 	public int offset;
-	public List<ProposalContract> results;
+	public List<Contract> results;
 }

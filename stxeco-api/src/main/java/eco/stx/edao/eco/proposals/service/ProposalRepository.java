@@ -12,4 +12,5 @@ public interface ProposalRepository extends MongoRepository<Proposal, String> {
 
     public List<Proposal> findByProposer(String proposer);
     public Proposal findByContractId(String contractId);
+	public List<Proposal> findByStatus(String string);
 }

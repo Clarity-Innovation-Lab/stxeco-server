@@ -1,4 +1,4 @@
-package eco.stx.edao.common;
+package eco.stx.edao.stacks;
 
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
@@ -21,6 +21,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 
 import eco.stx.edao.eco.proposals.service.domain.ProposalData;
 import eco.stx.edao.eco.proposals.service.domain.clarity.TypeValue;
+import eco.stx.edao.stacks.model.transactions.TransactionFromApiBean;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -60,6 +61,16 @@ public class ApiHelper {
 		response = restTemplate.exchange(url, HttpMethod.GET, requestEntity, String.class);
 		return response.getBody();
 	}
+	
+	public TransactionFromApiBean fetchTransaction(String txId) throws JsonProcessingException {
+		TransactionFromApiBean pox = null;
+		if (txId != null) {
+			ApiFetchConfig path = new ApiFetchConfig("GET", "/extended/v1/tx/" + txId, null);
+			String json = fetchFromApi(path);
+			pox = (TransactionFromApiBean)mapper.readValue(json, new TypeReference<TransactionFromApiBean>() {});
+		}
+		return pox;
+	}
 
 	public ProposalData deserialise(String functionName, String contractId, String json) throws JsonMappingException, JsonProcessingException {
 		ReadResult contractRead = (ReadResult)mapper.readValue(json, new TypeReference<ReadResult>() {});
@@ -84,7 +95,7 @@ public class ApiHelper {
 //		return p;
 	}
 
-	public String fetchFromApi(Principal principal) throws JsonProcessingException {
+	public String fetchFromApi(ApiFetchConfig principal) throws JsonProcessingException {
 		ResponseEntity<String> response = null;
 		String url = getUrl(principal, true);
 		try {
@@ -100,7 +111,7 @@ public class ApiHelper {
 		return response.getBody();
 	}
 	
-	public String fetchFromApi(Principal principal, String data) throws JsonProcessingException {
+	public String fetchFromApi(ApiFetchConfig principal, String data) throws JsonProcessingException {
 		ResponseEntity<String> response = null;
 		String url = getUrl(principal, true);
 		try {
@@ -119,7 +130,7 @@ public class ApiHelper {
 		return response.getBody();
 	}
 	
-	private ResponseEntity<String> getRespFromStacks(Principal principal) {
+	private ResponseEntity<String> getRespFromStacks(ApiFetchConfig principal) {
 		String url = remoteBasePath + principal.getPath();
 		if (principal.getHttpMethod() != null && principal.getHttpMethod().equalsIgnoreCase("POST")) {
 			return restTemplate.exchange(url, HttpMethod.POST, getRequestEntity(principal), String.class);
@@ -128,7 +139,7 @@ public class ApiHelper {
 		}
 	}
 	
-	private String getUrl(Principal principal, boolean local) {
+	private String getUrl(ApiFetchConfig principal, boolean local) {
 		String url = basePath + principal.getPath();
 		if (local) {
 			if (principal.getPath().indexOf("/extended/v1") > -1) {
@@ -143,7 +154,7 @@ public class ApiHelper {
 		return url;
 	}
 
-	private HttpEntity<String> getRequestEntity(Principal principal) {
+	private HttpEntity<String> getRequestEntity(ApiFetchConfig principal) {
 		try {
 			if (principal.getHttpMethod() == null || !principal.getHttpMethod().equalsIgnoreCase("POST")) {
 				return new HttpEntity<String>(new HttpHeaders());

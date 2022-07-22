@@ -4,6 +4,7 @@ import org.springframework.data.annotation.Id;
 import org.springframework.data.annotation.TypeAlias;
 import org.springframework.data.mongodb.core.mapping.Document;
 
+import eco.stx.edao.eco.api.model.Contract;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -22,7 +23,7 @@ import lombok.ToString;
 public class Proposal {
 
 	@Id private String id;
-	private ProposalContract proposalContract;
+	private Contract contract;
 	private ProposalData proposalData;
 	private long created;
 	private long updated;
@@ -37,6 +38,7 @@ public class Proposal {
 	private String githubIssue;
 	private String proposer;
 	private String seconder;
-	private String submitTx;
+	private String deployTxId;
+	private String submitTxId;
 	
 }

@@ -1,4 +1,4 @@
-package eco.stx.edao.common;
+package eco.stx.edao.stacks;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;

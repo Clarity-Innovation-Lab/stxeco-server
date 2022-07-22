@@ -16,14 +16,14 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
-import eco.stx.edao.common.ApiHelper;
-import eco.stx.edao.common.PostData;
-import eco.stx.edao.common.Principal;
-import eco.stx.edao.common.ReadResult;
+import eco.stx.edao.eco.api.model.Contract;
 import eco.stx.edao.eco.extensions.api.model.ExtensionTypeValue;
 import eco.stx.edao.eco.extensions.service.ExtensionRepository;
 import eco.stx.edao.eco.extensions.service.domain.Extension;
-import eco.stx.edao.eco.extensions.service.domain.ExtensionContract;
+import eco.stx.edao.stacks.ApiFetchConfig;
+import eco.stx.edao.stacks.ApiHelper;
+import eco.stx.edao.stacks.PostData;
+import eco.stx.edao.stacks.ReadResult;
 
 @Configuration
 @EnableScheduling
@@ -35,17 +35,21 @@ public class ExtensionWatcher {
 	@Autowired private ObjectMapper mapper;
 	@Autowired private ExtensionRepository extensionRepository;
 	@Value("${eco-stx.stax.daojsapi}") String basePath;
-	private static String[] EXTENSIONS = new String[] {"ede000-governance-token", "ede001-proposal-voting", "ede002-proposal-submission", "ede003-emergency-proposals", "ede004-emergency-execute", "ede005-dev-fund", "ede006-treasury", "ede007-governance-token-sale" };
+	private static String[] EXTENSIONS = new String[] {"ede000-governance-token", "ede001-proposal-voting", "ede002-proposal-submission", "ede003-emergency-proposals", "ede004-emergency-execute", "ede005-dev-fund", "ede006-snapshot-proposal-voting", "ede006-treasury", "ede007-governance-token-sale" };
 	
 	@Scheduled(fixedDelay=60000)
 	public void processExtensions() throws JsonProcessingException {
-		// Principal path = new Principal("GET", "/extended/v1/contract/by_trait?trait_abi=" + GitHubHelper.encodeValue(ExtensionTrait.trait), null);
+		// ApiFetchConfig path = new ApiFetchConfig("GET", "/extended/v1/contract/by_trait?trait_abi=" + GitHubHelper.encodeValue(ExtensionTrait.trait), null);
 		for (String extension : EXTENSIONS) {
-			Principal path = new Principal("GET", "/extended/v1/contract/" + contractAddress + "." + extension, null);
-			String json = apiHelper.fetchFromApi(path);
-			ExtensionContract contract = (ExtensionContract)mapper.readValue(json, new TypeReference<ExtensionContract>() {});
-			Extension p = merge(contract);
-			extensionRepository.save(p);
+			ApiFetchConfig path = new ApiFetchConfig("GET", "/extended/v1/contract/" + contractAddress + "." + extension, null);
+			try {
+				String json = apiHelper.fetchFromApi(path);
+				Contract contract = (Contract)mapper.readValue(json, new TypeReference<Contract>() {});
+				Extension p = merge(contract);
+				extensionRepository.save(p);
+			} catch (Exception e) {
+				// extension not found continue processing
+			}
 		}
 		// https://stacks-node-api.mainnet.stacks.co/extended/v1/contract/{contract_id}
 	}
@@ -71,7 +75,7 @@ public class ExtensionWatcher {
 		}
 	}
 	
-	private Extension merge(ExtensionContract pc) {
+	private Extension merge(Contract pc) {
 		Extension extension = extensionRepository.findByContractId(pc.getContractId());
 		if (extension == null) {
 			extension = new Extension();
@@ -91,7 +95,7 @@ public class ExtensionWatcher {
 		postd.setArguments(new String[] { arg0 });
 		postd.setSender(contractAddress);
         String path = "/v2/contracts/call-read/" + contractAddress + "/" + contractName + "/" + functionName;
-		Principal principal = new Principal("POST", path, postd);
+		ApiFetchConfig principal = new ApiFetchConfig("POST", path, postd);
 		String json = apiHelper.fetchFromApi(principal);
 		boolean valid = deserialise(functionName, contractAddress, json);
 		ext.setValid(valid);

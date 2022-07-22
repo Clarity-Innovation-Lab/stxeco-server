@@ -10,25 +10,24 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.scheduling.annotation.Scheduled;
-import org.springframework.web.client.RestOperations;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
-import eco.stx.edao.common.ApiHelper;
-import eco.stx.edao.common.PostData;
-import eco.stx.edao.common.Principal;
-import eco.stx.edao.common.ReadResult;
+import eco.stx.edao.eco.api.model.Contract;
 import eco.stx.edao.eco.proposals.api.model.ProposalContracts;
 import eco.stx.edao.eco.proposals.api.model.ProposalTrait;
 import eco.stx.edao.eco.proposals.service.ProposalRepository;
 import eco.stx.edao.eco.proposals.service.domain.Proposal;
-import eco.stx.edao.eco.proposals.service.domain.ProposalContract;
 import eco.stx.edao.eco.proposals.service.domain.ProposalData;
 import eco.stx.edao.eco.proposals.service.domain.clarity.TypeValue;
-import eco.stx.edao.stacks.service.ClarityDeserialiser;
+import eco.stx.edao.stacks.ApiFetchConfig;
+import eco.stx.edao.stacks.ApiHelper;
+import eco.stx.edao.stacks.PostData;
+import eco.stx.edao.stacks.ReadResult;
+import eco.stx.edao.stacks.model.transactions.TransactionFromApiBean;
 
 @Configuration
 @EnableScheduling
@@ -39,16 +38,48 @@ public class ProposalWatcher {
 	@Autowired private ObjectMapper mapper;
 	@Autowired private ProposalRepository proposalRepository;
 	@Value("${eco-stx.stax.daojsapi}") String basePath;
-	@Autowired private RestOperations restTemplate;
-	@Autowired private ClarityDeserialiser clarityDeserialiser;
 
 	@Scheduled(fixedDelay=60000)
+	public void processSubmissions() throws JsonProcessingException {
+		List<Proposal> proposals = proposalRepository.findByStatus("deploying");
+		checkTransactionStatus(proposals, "deployed");
+		proposals = proposalRepository.findByStatus("submitting");
+		checkTransactionStatus(proposals, "submitted");
+	}
+	
+	private void checkTransactionStatus(List<Proposal> proposals, String newStatus) throws JsonProcessingException {
+		if (proposals == null || proposals.isEmpty()) return;
+		for (Proposal proposal : proposals) {
+			String txId = proposal.getDeployTxId();
+			if (newStatus.equals("submitted")) txId = proposal.getSubmitTxId();
+			if (txId == null) {
+				proposal.setStatus("draft");
+			} else {
+				try {
+					TransactionFromApiBean tx = apiHelper.fetchTransaction(txId);
+					if (tx.getTx_status().equals("pending")) {
+						// do nothing
+					} else if (tx.getTx_status().equals("success")) {
+						proposal.setStatus(newStatus);
+					} else {
+						proposal.setStatus("draft");
+					}
+				} catch (Exception e) {
+					// devnet txs come and go - shouldnt happen on mainnet
+					proposal.setStatus("draft");
+				}
+			}
+			proposalRepository.save(proposal);
+		}
+	}
+	
+	@Scheduled(fixedDelay=3600000)
 	public void processProposals() throws JsonProcessingException {
-		// Principal path = new Principal("GET", "/extended/v1/contract/by_trait?trait_abi=" + GitHubHelper.encodeValue(ExtensionTrait.trait), null);
-		Principal path = new Principal("GET", "/extended/v1/contract/by_trait?trait_abi={trait}", null);
+		// ApiFetchConfig path = new ApiFetchConfig("GET", "/extended/v1/contract/by_trait?trait_abi=" + GitHubHelper.encodeValue(ExtensionTrait.trait), null);
+		ApiFetchConfig path = new ApiFetchConfig("GET", "/extended/v1/contract/by_trait?trait_abi={trait}", null);
 		String json = apiHelper.fetchFromApi(path, ProposalTrait.trait);
 		ProposalContracts contracts = (ProposalContracts)mapper.readValue(json, new TypeReference<ProposalContracts>() {});
-		for (ProposalContract pc : contracts.getResults()) {
+		for (Contract pc : contracts.getResults()) {
 			Proposal p = merge(pc);
 			proposalRepository.save(p);
 		}
@@ -75,7 +106,7 @@ public class ProposalWatcher {
 		}
 	}
 	
-	private Proposal merge(ProposalContract pc) {
+	private Proposal merge(Contract pc) {
 		Proposal prop = proposalRepository.findByContractId(pc.getContractId());
 		if (prop == null) {
 			prop = new Proposal();
@@ -85,7 +116,7 @@ public class ProposalWatcher {
 			prop.setStatus("deployed");
 		}
 		if (prop.getStatus().equals("draft")) prop.setStatus("deployed");
-		prop.setProposalContract(pc);
+		prop.setContract(pc);
 		return prop;
 	}
 	
@@ -102,7 +133,7 @@ public class ProposalWatcher {
 		postd.setArguments(new String[] { arg0 });
 		postd.setSender(contractAddress);
         String path = "/v2/contracts/call-read/" + contractAddress + "/" + contractName + "/" + functionName;
-		Principal principal = new Principal("POST", path, postd);
+		ApiFetchConfig principal = new ApiFetchConfig("POST", path, postd);
 		String json = apiHelper.fetchFromApi(principal);
 		ProposalData pd = deserialise(functionName, contractAddress, json);
 		if (pd != null) {

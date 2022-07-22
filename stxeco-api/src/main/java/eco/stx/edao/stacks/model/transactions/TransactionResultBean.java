@@ -1,4 +1,6 @@
-package eco.stx.edao.common;
+package eco.stx.edao.stacks.model.transactions;
+
+import org.springframework.data.annotation.TypeAlias;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -13,10 +15,9 @@ import lombok.ToString;
 @ToString
 @AllArgsConstructor
 @NoArgsConstructor
-public class Principal {
+@TypeAlias(value = "TransactionResultBean")
+public class TransactionResultBean {
 
-	public String httpMethod;
-	private String path;
-	private PostData postData;
-
+	private String hex;
+	private String repr;
 }

@@ -16,13 +16,13 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
-import eco.stx.edao.common.ApiHelper;
-import eco.stx.edao.common.PostData;
-import eco.stx.edao.common.Principal;
-import eco.stx.edao.common.ReadResult;
 import eco.stx.edao.eco.daoProperties.api.model.DaoPropertyType;
 import eco.stx.edao.eco.daoProperties.service.DaoPropertyRepository;
 import eco.stx.edao.eco.daoProperties.service.domain.DaoProperty;
+import eco.stx.edao.stacks.ApiHelper;
+import eco.stx.edao.stacks.PostData;
+import eco.stx.edao.stacks.ApiFetchConfig;
+import eco.stx.edao.stacks.ReadResult;
 
 @Configuration
 @EnableScheduling
@@ -82,7 +82,7 @@ public class DaoPropertiesWatcher {
 		postd.setArguments(addArgument(functionName, arg));
 		postd.setSender(contractAddress);
         String path = "/v2/contracts/call-read/" + contractAddress + "/" + contractName + "/" + functionName;
-		Principal principal = new Principal("POST", path, postd);
+		ApiFetchConfig principal = new ApiFetchConfig("POST", path, postd);
 		String json = apiHelper.fetchFromApi(principal);
 		Object extd = deserialise(functionName, contractAddress, json);
 		return extd;

@@ -14,16 +14,16 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
-import eco.stx.edao.common.ApiHelper;
-import eco.stx.edao.common.PostData;
-import eco.stx.edao.common.Principal;
-import eco.stx.edao.common.ReadResult;
 import eco.stx.edao.eco.daoProperties.api.model.DaoPropertyType;
 import eco.stx.edao.eco.daoProperties.api.model.DaoPropertyTypeValue;
 import eco.stx.edao.eco.daoProperties.service.DaoPropertyRepository;
 import eco.stx.edao.eco.daoProperties.service.domain.DaoProperty;
 import eco.stx.edao.eco.userPropoerties.service.UserPropertyRepository;
 import eco.stx.edao.eco.userPropoerties.service.domain.UserProperty;
+import eco.stx.edao.stacks.ApiFetchConfig;
+import eco.stx.edao.stacks.ApiHelper;
+import eco.stx.edao.stacks.PostData;
+import eco.stx.edao.stacks.ReadResult;
 
 @Configuration
 @EnableScheduling
@@ -36,23 +36,25 @@ public class UserPropertiesWatcher {
 	@Value("${eco-stx.stax.daojsapi}") String basePath;
 	@Value("${stacks.dao.deployer}") String contractAddress;
 	private static String governanceTokenContract = "ede000-governance-token";
-
+	private static String emergencyProposals = "ede003-emergency-proposals";
 
 	//@Scheduled(fixedDelay=60000)
 	public List<UserProperty> process(String stxAddress) throws JsonProcessingException {
 		List<UserProperty> upm = new ArrayList<UserProperty>();
-		upm.add(fetchParam(governanceTokenContract, "edg-get-total-delegated", new String[] {stxAddress + "::principal" }));
-		upm.add(fetchParam(governanceTokenContract, "edg-get-locked", new String[] {stxAddress + "::principal"}));
-		upm.add(fetchParam(governanceTokenContract, "edg-get-balance", new String[] {stxAddress + "::principal"}));
+		fetchParam(upm, governanceTokenContract, "edg-get-total-delegated", new String[] {stxAddress + "::principal" });
+		fetchParam(upm, governanceTokenContract, "edg-get-locked", new String[] {stxAddress + "::principal"});
+		fetchParam(upm, governanceTokenContract, "edg-get-balance", new String[] {stxAddress + "::principal"});
+		fetchParam(upm, governanceTokenContract, "edg-get-balance", new String[] {stxAddress + "::principal"});
+		fetchParam(upm, emergencyProposals, "is-emergency-team-member", new String[] {stxAddress + "::principal"});
 		Optional<DaoProperty> dp = daoPropertyRepository.findById("propose-factor");
 		if (dp.isPresent()) {
-			upm.add(fetchParam(governanceTokenContract, "edg-has-percentage-balance", new String[] {stxAddress + "::principal", dp.get().getValue() + "::uint"}));
+			fetchParam(upm, governanceTokenContract, "edg-has-percentage-balance", new String[] {stxAddress + "::principal", dp.get().getValue() + "::uint"});
 		}
 		return upm;
 	}
 	
 	// @Async
-	private UserProperty fetchParam(String contractName, String functionName, String[] args) throws JsonProcessingException {
+	private UserProperty fetchParam(List<UserProperty> upm, String contractName, String functionName, String[] args) throws JsonProcessingException {
 		try {
 			Optional<UserProperty> dps = Optional.empty();
 			dps = userPropertyRepository.findByStxAddressAndFunctionName(args[0].split("::")[0], functionName);
@@ -70,6 +72,7 @@ public class UserPropertiesWatcher {
 				dp.setValue(value);
 			}
 			dp = userPropertyRepository.save(dp);
+			upm.add(dp);
 			return dp;
 		} catch (Exception e) {
 			// parameter maybe unsupported on current dao branch;
@@ -82,7 +85,7 @@ public class UserPropertiesWatcher {
 		postd.setArguments(serialisedArgs);
 		postd.setSender(contractAddress);
         String path = "/v2/contracts/call-read/" + contractAddress + "/" + contractName + "/" + functionName;
-		Principal principal = new Principal("POST", path, postd);
+		ApiFetchConfig principal = new ApiFetchConfig("POST", path, postd);
 		String json = apiHelper.fetchFromApi(principal);
 		DaoPropertyTypeValue extd = deserialise(functionName, contractAddress, json);
 		return extd;
@@ -108,9 +111,13 @@ public class UserPropertiesWatcher {
 		ReadResult contractRead = (ReadResult)mapper.readValue(json, new TypeReference<ReadResult>() {});
 		String param = "/to-json/" + contractRead.getResult();
 		json = apiHelper.cvConversion(param);
-		DaoPropertyType typeValue = (DaoPropertyType)mapper.readValue(json, new TypeReference<DaoPropertyType>() {});
-		if (typeValue.getValue() == null) return null;
-		return typeValue.getValue();
+		if (json.indexOf("response") > -1) {
+			DaoPropertyType typeValue = (DaoPropertyType)mapper.readValue(json, new TypeReference<DaoPropertyType>() {});
+			return typeValue.getValue();
+		} else {
+			DaoPropertyTypeValue typeValue = (DaoPropertyTypeValue)mapper.readValue(json, new TypeReference<DaoPropertyTypeValue>() {});
+			return typeValue;
+		}
 	}
 
 }
