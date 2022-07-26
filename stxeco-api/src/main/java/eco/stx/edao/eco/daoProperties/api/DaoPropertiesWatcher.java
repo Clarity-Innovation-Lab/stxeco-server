@@ -36,7 +36,7 @@ public class DaoPropertiesWatcher {
 	@Value("${stacks.dao.deployer}") String contractAddress;
 	@Autowired private RestOperations restTemplate;
 	private static String governanceTokenContract = "ede000-governance-token";
-	private static String proposalSubmissionContract = "ede002-proposal-submission";
+	private static String proposalSubmissionContract = "ede002-threshold-proposal-submission";
 
 
 	@Scheduled(fixedDelay=60000)

@@ -35,8 +35,18 @@ public class ExtensionWatcher {
 	@Autowired private ObjectMapper mapper;
 	@Autowired private ExtensionRepository extensionRepository;
 	@Value("${eco-stx.stax.daojsapi}") String basePath;
-	private static String[] EXTENSIONS = new String[] {"ede000-governance-token", "ede001-proposal-voting", "ede002-proposal-submission", "ede003-emergency-proposals", "ede004-emergency-execute", "ede005-dev-fund", "ede006-snapshot-proposal-voting", "ede006-treasury", "ede007-governance-token-sale" };
-	
+	private static String[] EXTENSIONS = new String[] {
+			"ede000-governance-token", 
+			"ede001-proposal-voting", 
+			"ede002-threshold-proposal-submission", 
+			"ede003-emergency-proposals", 
+			"ede004-emergency-execute", 
+			"ede005-dev-fund", 
+			"ede006-treasury", 
+			"ede007-snapshot-proposal-voting", 
+			"ede008-funded-proposal-submission",
+			"ede009-governance-token-sale"
+	};
 	@Scheduled(fixedDelay=60000)
 	public void processExtensions() throws JsonProcessingException {
 		// ApiFetchConfig path = new ApiFetchConfig("GET", "/extended/v1/contract/by_trait?trait_abi=" + GitHubHelper.encodeValue(ExtensionTrait.trait), null);
