@@ -37,6 +37,7 @@ public class UserPropertiesWatcher {
 	@Value("${stacks.dao.deployer}") String contractAddress;
 	private static String governanceTokenContract = "ede000-governance-token";
 	private static String emergencyProposals = "ede003-emergency-proposals";
+	private static String emergencyExecute = "ede004-emergency-execute";
 
 	//@Scheduled(fixedDelay=60000)
 	public List<UserProperty> process(String stxAddress) throws JsonProcessingException {
@@ -46,6 +47,7 @@ public class UserPropertiesWatcher {
 		fetchParam(upm, governanceTokenContract, "edg-get-balance", new String[] {stxAddress + "::principal"});
 		fetchParam(upm, governanceTokenContract, "edg-get-balance", new String[] {stxAddress + "::principal"});
 		fetchParam(upm, emergencyProposals, "is-emergency-team-member", new String[] {stxAddress + "::principal"});
+		fetchParam(upm, emergencyExecute, "is-executive-team-member", new String[] {stxAddress + "::principal"});
 		Optional<DaoProperty> dp = daoPropertyRepository.findById("propose-factor");
 		if (dp.isPresent()) {
 			fetchParam(upm, governanceTokenContract, "edg-has-percentage-balance", new String[] {stxAddress + "::principal", dp.get().getValue() + "::uint"});

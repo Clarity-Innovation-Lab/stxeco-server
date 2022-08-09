@@ -34,9 +34,9 @@ public class DaoPropertiesWatcher {
 	@Autowired private DaoPropertyRepository daoPropertyRepository;
 	@Value("${eco-stx.stax.daojsapi}") String basePath;
 	@Value("${stacks.dao.deployer}") String contractAddress;
-	@Autowired private RestOperations restTemplate;
 	private static String governanceTokenContract = "ede000-governance-token";
 	private static String proposalSubmissionContract = "ede002-threshold-proposal-submission";
+	private static String fundedSubmissionContract = "ede008-funded-proposal-submission";
 
 
 	@Scheduled(fixedDelay=60000)
@@ -46,13 +46,11 @@ public class DaoPropertiesWatcher {
 		fetchParam(proposalSubmissionContract, "get-parameter", "maximum-proposal-start-delay");
 		fetchParam(proposalSubmissionContract, "get-parameter", "proposal-duration");
 		fetchParam(proposalSubmissionContract, "get-parameter", "propose-factor");
+		fetchParam(fundedSubmissionContract, "get-parameter", "funding-cost");
+		fetchParam(fundedSubmissionContract, "get-parameter", "proposal-duration");
+		fetchParam(fundedSubmissionContract, "get-parameter", "proposal-start-delay");
 	}
 	
-	private List<DaoProperty> getDP() {
-		List<DaoProperty> dp = daoPropertyRepository.findAll();
-		return dp;
-	}
-		
 	@Async
 	private void fetchParam(String contractName, String functionName, String arg) throws JsonProcessingException {
 		try {

@@ -1,5 +1,6 @@
 package eco.stx.edao.eco.proposals.api;
 
+import java.util.LinkedHashMap;
 import java.util.List;
 
 import org.apache.logging.log4j.LogManager;
@@ -22,6 +23,7 @@ import eco.stx.edao.eco.proposals.api.model.ProposalTrait;
 import eco.stx.edao.eco.proposals.service.ProposalRepository;
 import eco.stx.edao.eco.proposals.service.domain.Proposal;
 import eco.stx.edao.eco.proposals.service.domain.ProposalData;
+import eco.stx.edao.eco.proposals.service.domain.clarity.CTypeValue;
 import eco.stx.edao.eco.proposals.service.domain.clarity.TypeValue;
 import eco.stx.edao.stacks.ApiFetchConfig;
 import eco.stx.edao.stacks.ApiHelper;
@@ -37,7 +39,12 @@ public class ProposalWatcher {
 	@Autowired private ApiHelper apiHelper;
 	@Autowired private ObjectMapper mapper;
 	@Autowired private ProposalRepository proposalRepository;
+	@Value("${stacks.dao.deployer}") String deployer;
 	@Value("${eco-stx.stax.daojsapi}") String basePath;
+	private static String snapshotVoting = "ede007-snapshot-proposal-voting";
+	private static String proposalVoting = "ede001-proposal-voting";
+	private static String fundedSubmission = "ede008-funded-proposal-submission";
+	private static String emergencyExecute = "ede004-emergency-execute";
 
 	@Scheduled(fixedDelay=60000)
 	public void processSubmissions() throws JsonProcessingException {
@@ -120,12 +127,43 @@ public class ProposalWatcher {
 		return prop;
 	}
 	
+	/**
+	 * Checks for funded and threshold proposal submission and also
+	 * for emergency execution
+	 * @param p
+	 * @throws JsonProcessingException
+	 */
 	@Async
 	private void checkProposalSubmission(Proposal p) throws JsonProcessingException {
-		String contractAddress = p.getContractId().split("\\.")[0];
-		String contractName = "ede001-proposal-voting"; // p.getContractId().split("\\.")[1];
+		ProposalData pd = null;
+		Long funding = checkProposalFunding(p);
+		if (funding != null && funding > 0) {
+			p.setFunding(funding.intValue() / 1000000);
+			pd = checkProposalSubmission(snapshotVoting, p);
+			saveProposal(snapshotVoting, p, pd);
+		} else {
+			pd = checkProposalSubmission(proposalVoting, p);
+			saveProposal(proposalVoting, p, pd);
+		}
+		Long signals = checkEmergencyExecute(p);
+		if (signals != null && signals > 0) {
+			p.setEmergencySignals(signals.intValue());
+			saveProposal(emergencyExecute, p, pd);
+		}
+ 	}
+	
+	private void saveProposal(String votingContract, Proposal p, ProposalData pd) throws JsonProcessingException {
+		p.setVotingContract(votingContract);
+		p.setProposalData(pd);
+		checkProposalExecution(p);
+		proposalRepository.save(p);
+	}
+		
+	private ProposalData checkProposalSubmission(String votingContract, Proposal p) throws JsonProcessingException {
+		String contractAddress = deployer;
+		String contractName = votingContract;
 		String functionName = "get-proposal-data";
-		String param = "/contract-principal/" + contractAddress + "/" + p.getContractId().split("\\.")[1];
+		String param = "/contract-principal/" + p.getContractId().split("\\.")[0] + "/" + p.getContractId().split("\\.")[1];
 		String arg0 = apiHelper.cvConversion(param);
 		logger.info("Extension argument: " + arg0);
 
@@ -136,10 +174,62 @@ public class ProposalWatcher {
 		ApiFetchConfig principal = new ApiFetchConfig("POST", path, postd);
 		String json = apiHelper.fetchFromApi(principal);
 		ProposalData pd = deserialise(functionName, contractAddress, json);
-		if (pd != null) {
-			p.setProposalData(pd);
-			proposalRepository.save(p);
-		}
+		return pd;
+ 	}
+		
+	private Long checkProposalFunding(Proposal p) throws JsonProcessingException {
+		String contractAddress = deployer;
+		String contractName = fundedSubmission;
+		String functionName = "get-proposal-funding";
+		String param = "/contract-principal/" + p.getContractId().split("\\.")[0] + "/" + p.getContractId().split("\\.")[1];
+		String arg0 = apiHelper.cvConversion(param);
+		logger.info("Extension argument: " + arg0);
+
+		PostData postd = new PostData();
+		postd.setArguments(new String[] { arg0 });
+		postd.setSender(contractAddress);
+        String path = "/v2/contracts/call-read/" + contractAddress + "/" + contractName + "/" + functionName;
+		ApiFetchConfig principal = new ApiFetchConfig("POST", path, postd);
+		String json = apiHelper.fetchFromApi(principal);
+		Long funding = deserialiseExecution(functionName, contractAddress, json);
+		return funding;
+ 	}
+		
+	private Long checkEmergencyExecute(Proposal p) throws JsonProcessingException {
+		String contractAddress = deployer;
+		String contractName = emergencyExecute;
+		String functionName = "get-signals";
+		String param = "/contract-principal/" + p.getContractId().split("\\.")[0] + "/" + p.getContractId().split("\\.")[1];
+		String arg0 = apiHelper.cvConversion(param);
+		logger.info("Extension argument: " + arg0);
+
+		PostData postd = new PostData();
+		postd.setArguments(new String[] { arg0 });
+		postd.setSender(contractAddress);
+        String path = "/v2/contracts/call-read/" + contractAddress + "/" + contractName + "/" + functionName;
+		ApiFetchConfig principal = new ApiFetchConfig("POST", path, postd);
+		String json = apiHelper.fetchFromApi(principal);
+		Long signals = deserialiseExecution(functionName, contractAddress, json);
+		return signals;
+ 	}
+		
+	private void checkProposalExecution(Proposal p) throws JsonProcessingException {
+		String contractAddress = p.getContractId().split("\\.")[0];
+		String contractName = "executor-dao"; // p.getContractId().split("\\.")[1];
+		String functionName = "executed-at";
+		String param = "/contract-principal/" + contractAddress + "/" + p.getContractId().split("\\.")[1];
+		String arg0 = apiHelper.cvConversion(param);
+		logger.info("Extension argument: " + arg0);
+
+		PostData postd = new PostData();
+		postd.setArguments(new String[] { arg0 });
+		postd.setSender(contractAddress);
+        String path = "/v2/contracts/call-read/" + contractAddress + "/" + contractName + "/" + functionName;
+		ApiFetchConfig principal = new ApiFetchConfig("POST", path, postd);
+		String json = apiHelper.fetchFromApi(principal);
+		Long blockHeight = deserialiseExecution(functionName, contractAddress, json);
+		if (blockHeight != null) p.setExecutedAt(blockHeight.intValue());
+		proposalRepository.save(p);
  	}
 		
 	private ProposalData deserialise(String functionName, String contractId, String json) throws JsonMappingException, JsonProcessingException {
@@ -149,6 +239,26 @@ public class ProposalWatcher {
 		TypeValue typeValue = (TypeValue)mapper.readValue(json, new TypeReference<TypeValue>() {});
 		if (typeValue.getValue() == null) return null;
 		return ProposalData.fromClarity(typeValue.getValue().getValue());
+	}
+	
+	private Long deserialiseExecution(String functionName, String contractId, String json) throws JsonMappingException, JsonProcessingException {
+		try {
+			ReadResult contractRead = (ReadResult)mapper.readValue(json, new TypeReference<ReadResult>() {});
+			String param = "/to-json/" + contractRead.getResult();
+			json = apiHelper.cvConversion(param);
+			CTypeValue typeValue = (CTypeValue)mapper.readValue(json, new TypeReference<CTypeValue>() {});
+			if (functionName.equals("get-proposal-funding") || functionName.equals("get-signals")) {
+				return Long.parseLong(String.valueOf(typeValue.getValue()));
+			}
+			LinkedHashMap<String, Object> val = (LinkedHashMap) typeValue.getValue();
+			//typeValue = (CTypeValue)mapper.readValue((String)typeValue.getValue(), new TypeReference<CTypeValue>() {});
+			//if (json.indexOf("some") > -1 || json.indexOf("true") > -1) return true;
+			if (val == null) return null;
+			Object o = val.get("value");
+			return Long.parseLong(String.valueOf(o));
+		} catch (Exception e) {
+			return null;
+		}
 	}
 
 }

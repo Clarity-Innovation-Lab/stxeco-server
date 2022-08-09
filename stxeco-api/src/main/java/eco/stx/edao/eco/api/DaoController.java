@@ -18,9 +18,8 @@ import eco.stx.edao.eco.daoProperties.service.DaoPropertyRepository;
 import eco.stx.edao.eco.extensions.service.ExtensionRepository;
 import eco.stx.edao.eco.proposals.service.ProposalRepository;
 import eco.stx.edao.eco.userPropoerties.api.UserPropertiesWatcher;
-import eco.stx.edao.eco.userPropoerties.service.UserPropertyRepository;
-import eco.stx.edao.stacks.ApiHelper;
 import eco.stx.edao.stacks.ApiFetchConfig;
+import eco.stx.edao.stacks.ApiHelper;
 
 
 @RestController
@@ -29,7 +28,6 @@ public class DaoController {
 	@Autowired private ProposalRepository proposalRepository;
 	@Autowired private ExtensionRepository extensionRepository;
 	@Autowired private DaoPropertyRepository daoPropertyRepository;
-	@Autowired private UserPropertyRepository userPropertyRepository;
 	@Autowired private UserPropertiesWatcher userPropertiesWatcher;
 	@Autowired private ApiHelper apiHelper;
 	@Autowired private ObjectMapper mapper;

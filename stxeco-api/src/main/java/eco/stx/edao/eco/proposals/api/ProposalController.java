@@ -39,6 +39,11 @@ public class ProposalController {
  		proposalWatcher.processProposalData(contractId);
 	}
 
+	@GetMapping(value = "/v2/proposal/{contractId}")
+	public Proposal proposal(@PathVariable String contractId) {
+		return proposalRepository.findByContractId(contractId);
+	}
+
 	@GetMapping(value = "/v2/proposals")
 	public List<Proposal> fetch() {
 		return proposalRepository.findAll();

@@ -47,6 +47,7 @@ public class ExtensionWatcher {
 			"ede008-funded-proposal-submission",
 			"ede009-governance-token-sale"
 	};
+	
 	@Scheduled(fixedDelay=60000)
 	public void processExtensions() throws JsonProcessingException {
 		// ApiFetchConfig path = new ApiFetchConfig("GET", "/extended/v1/contract/by_trait?trait_abi=" + GitHubHelper.encodeValue(ExtensionTrait.trait), null);
@@ -90,6 +91,7 @@ public class ExtensionWatcher {
 		if (extension == null) {
 			extension = new Extension();
 		}
+		extension.setContractId(pc.getContractId());
 		extension.setContract(pc);
 		return extension;
 	}

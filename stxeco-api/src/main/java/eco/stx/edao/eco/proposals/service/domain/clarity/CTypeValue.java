@@ -15,7 +15,7 @@ import lombok.ToString;
 @ToString
 @NoArgsConstructor
 @AllArgsConstructor
-@TypeAlias(value = "DaoPropertyType")
+@TypeAlias(value = "CTypeValue")
 public class CTypeValue {
 
 	public String type;

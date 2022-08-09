@@ -24,8 +24,8 @@ public class ProposalData {
 	public String proposer;
 	public Integer endBlockHeight;
 	public Integer startBlockHeight;
-	public Integer votesAgainst;
-	public Integer votesFor;
+	public Long votesAgainst;
+	public Long votesFor;
 	
 	public static ProposalData fromClarity(ClarityProposalData cpd) {
 		ProposalData pd = new ProposalData();
@@ -33,8 +33,8 @@ public class ProposalData {
 		pd.setPassed((Boolean)cpd.getPassed().getValue());
 		pd.setEndBlockHeight(Integer.valueOf((String)cpd.getEndBlockHeight().getValue()));
 		pd.setStartBlockHeight(Integer.valueOf((String)cpd.getStartBlockHeight().getValue()));
-		pd.setVotesFor(Integer.valueOf((String)cpd.getVotesFor().getValue()));
-		pd.setVotesAgainst(Integer.valueOf((String)cpd.getVotesAgainst().getValue()));
+		pd.setVotesFor(Long.valueOf((String)cpd.getVotesFor().getValue()));
+		pd.setVotesAgainst(Long.valueOf((String)cpd.getVotesAgainst().getValue()));
 		pd.setProposer((String)cpd.getProposer().getValue());
 		return pd;
 	}

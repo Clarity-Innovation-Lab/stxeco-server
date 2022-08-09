@@ -17,9 +17,8 @@ eco-stx:
       fee-rate: https://bitcoinfees.earn.com/api/v1/fees/recommended
       fee-list: https://bitcoinfees.earn.com/api/v1/fees/list
    stax:
-      base-path: http://docker.for.mac.localhost:20443
-      blockchain-api-path: http://docker.for.mac.localhost:3999
-      stacks-path: http://localhost:20443
+      stacks-path-primary: http://docker.for.mac.localhost
+      stacks-path-secondary: https://localhost
       admin-contract-address: ST1ESYCGJB5Z5NBHS39XPC70PGC14WAQK5XXNQYDW
       admin-contract-name: appmap-v1
       daojsapi: http://docker.for.mac.localhost:8280
@@ -30,10 +29,6 @@ spring:
    profiles: test
 application:
    mongoIp: mongodb://localhost
-eco-stx:
-   stax:
-      base-path: http://176.58.109.133:20443
-      blockchain-api-path: http://176.58.109.133:3999
 
 ---
 
@@ -43,8 +38,6 @@ application:
    mongoIp: mongodb://localhost
 eco-stx:
    stax:
-      base-path: http://172.17.0.1:20443
-      blockchain-api-path: http://172.17.0.1:3999
       daojsapi: http://172.17.0.1:8280
 
 ---
@@ -53,10 +46,6 @@ spring:
     profiles: docker-dev
 application:
    mongoIp: mongodb://localhost
-eco-stx:
-   stax:
-      base-path: http://176.58.109.133:20443
-      blockchain-api-path: http://176.58.109.133:3999
 
 ---
 
@@ -67,12 +56,11 @@ application:
    mongoPort: 27017
 stacks:
    dao:
-      deployer: ST1NXBK3K5YYMD6FD41MVNP3JS1GABZ8TRVX023PT
+      deployer: ST167Z6WFHMV0FZKFCRNWZ33WTB0DFBCW9M1FW3AY
 eco-stx:
    stax:
-      base-path: http://176.58.109.133:20443
-      blockchain-api-path: http://176.58.109.133:3999
-      stacks-path: https://stacks-node-api.testnet.stacks.co
+      stacks-path-primary: http://176.58.109.133
+      stacks-path-secondary: https://stacks-node-api.testnet.stacks.co
       admin-contract-address: ST1NXBK3K5YYMD6FD41MVNP3JS1GABZ8TRVX023PT
       admin-contract-name: appmap-v1
       daojsapi: http://daojsapi:8280
@@ -86,12 +74,11 @@ application:
    mongoPort: 27017
 stacks:
    dao:
-      deployer: SP3BTM84FYABJGJ83519GG5NSV0A6A13D4NHJSS32
+      deployer: SP167Z6WFHMV0FZKFCRNWZ33WTB0DFBCW9QRVJ627
 eco-stx:
    stax:
-      base-path: http://45.79.131.55:20443
-      blockchain-api-path: http://45.79.131.55:3999
-      stacks-path: https://stacks-node-api.mainnet.stacks.co
+      stacks-path-primary: http://45.79.131.55
+      stacks-path-secondary: https://stacks-node-api.mainnet.stacks.co
       admin-contract-address: SP3QSAJQ4EA8WXEDSRRKMZZ29NH91VZ6C5X88FGZQ
       admin-contract-name: appmap-v1
       daojsapi: http://daojsapi:8280

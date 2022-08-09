@@ -23,6 +23,7 @@ import lombok.ToString;
 public class Extension {
 
 	@Id private String id;
+	private String contractId;
 	private Contract contract;
 	private boolean valid;
 	

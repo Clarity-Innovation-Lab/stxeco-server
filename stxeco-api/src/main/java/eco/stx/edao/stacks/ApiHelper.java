@@ -41,10 +41,11 @@ public class ApiHelper {
 	@Autowired private ObjectMapper mapper;
 	@Autowired private RestOperations restTemplate;
 	@Value("${spring.profiles.active}") private String activeProfile;
-	@Value("${eco-stx.stax.base-path}") String basePath;
-	@Value("${eco-stx.stax.blockchain-api-path}") String sidecarPath;
-	@Value("${eco-stx.stax.stacks-path}") String remoteBasePath;
+	@Value("${eco-stx.stax.stacks-path-primary}") String stacksPathPrimary;
+	@Value("${eco-stx.stax.stacks-path-secondary}") String stacksPathSecondary;
 	@Value("${eco-stx.stax.daojsapi}") String daojsapi;
+	private static final String port1 = ":20443";
+	private static final String port2 = ":3999";
 
 	public static String encodeValue(String value) {
 	    try {
@@ -104,7 +105,6 @@ public class ApiHelper {
 			} else {
 				response = restTemplate.exchange(url, HttpMethod.GET, getRequestEntity(principal), String.class);
 			}
-			//response = getRespFromStacks(principal);
 		} catch (Exception e) {
 			response = getRespFromStacks(principal);
 		}
@@ -115,15 +115,7 @@ public class ApiHelper {
 		ResponseEntity<String> response = null;
 		String url = getUrl(principal, true);
 		try {
-			if (principal.getHttpMethod() != null && principal.getHttpMethod().equalsIgnoreCase("POST")) {
-				response = restTemplate.exchange(url, HttpMethod.POST, getRequestEntity(principal), String.class, data);
-			} else {
-				// response = restTemplate.exchange(url, HttpMethod.GET, getRequestEntity(principal), String.class, data);
-//				org.apache.commons.codec.net.URLCodec codec = new org.apache.commons.codec.net.URLCodec();
-//				String url1 = url + codec.encode(uriVar);
-				return restTemplate.getForObject(url, String.class, data);
-			}
-			response = getRespFromStacks(principal);
+			return restTemplate.getForObject(url, String.class, data);
 		} catch (Exception e) {
 			response = getRespFromStacks(principal);
 		}
@@ -131,7 +123,7 @@ public class ApiHelper {
 	}
 	
 	private ResponseEntity<String> getRespFromStacks(ApiFetchConfig principal) {
-		String url = remoteBasePath + principal.getPath();
+		String url = stacksPathSecondary + principal.getPath();
 		if (principal.getHttpMethod() != null && principal.getHttpMethod().equalsIgnoreCase("POST")) {
 			return restTemplate.exchange(url, HttpMethod.POST, getRequestEntity(principal), String.class);
 		} else {
@@ -140,16 +132,11 @@ public class ApiHelper {
 	}
 	
 	private String getUrl(ApiFetchConfig principal, boolean local) {
-		String url = basePath + principal.getPath();
-		if (local) {
-			if (principal.getPath().indexOf("/extended/v1") > -1) {
-				url = sidecarPath + principal.getPath();
-			}
+		String url = null;
+		if (principal.getPath().indexOf("/extended/v1") > -1) {
+			url = stacksPathPrimary + port2 + principal.getPath();
 		} else {
-			url = remoteBasePath + principal.getPath();
-			if (remoteBasePath.indexOf("20443") > -1 && principal.getPath().indexOf("/extended/v1") > -1) {
-				url = url.replace("3999", "20443");
-			}
+			url = stacksPathPrimary + port1 + principal.getPath();
 		}
 		return url;
 	}

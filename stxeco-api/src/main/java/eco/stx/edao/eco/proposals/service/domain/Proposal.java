@@ -27,11 +27,13 @@ public class Proposal {
 	private ProposalData proposalData;
 	private long created;
 	private long updated;
-	private boolean onChain;
+	private int executedAt;
+	private int funding;
+	private int emergencySignals;
 	private String status;
 	private String title;
 	private String description;
-	private String chain;
+	private String votingContract;
 	private String contractId;
 	private String proposalUrl;
 	private String githubPullRequest;
