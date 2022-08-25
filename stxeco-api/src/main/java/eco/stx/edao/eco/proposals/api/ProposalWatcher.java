@@ -21,8 +21,10 @@ import eco.stx.edao.eco.api.model.Contract;
 import eco.stx.edao.eco.proposals.api.model.ProposalContracts;
 import eco.stx.edao.eco.proposals.api.model.ProposalTrait;
 import eco.stx.edao.eco.proposals.service.ProposalRepository;
+import eco.stx.edao.eco.proposals.service.ProposerRepository;
 import eco.stx.edao.eco.proposals.service.domain.Proposal;
 import eco.stx.edao.eco.proposals.service.domain.ProposalData;
+import eco.stx.edao.eco.proposals.service.domain.Proposer;
 import eco.stx.edao.eco.proposals.service.domain.clarity.CTypeValue;
 import eco.stx.edao.eco.proposals.service.domain.clarity.TypeValue;
 import eco.stx.edao.stacks.ApiFetchConfig;
@@ -38,20 +40,84 @@ public class ProposalWatcher {
     private static final Logger logger = LogManager.getLogger(ProposalWatcher.class);
 	@Autowired private ApiHelper apiHelper;
 	@Autowired private ObjectMapper mapper;
+	@Autowired private ProposerRepository proposerRepository;
 	@Autowired private ProposalRepository proposalRepository;
 	@Value("${stacks.dao.deployer}") String deployer;
-	@Value("${eco-stx.stax.daojsapi}") String basePath;
 	private static String snapshotVoting = "ede007-snapshot-proposal-voting";
 	private static String proposalVoting = "ede001-proposal-voting";
 	private static String fundedSubmission = "ede008-funded-proposal-submission";
 	private static String emergencyExecute = "ede004-emergency-execute";
+	
 
-	@Scheduled(fixedDelay=60000)
+	//@Scheduled(fixedDelay=3600000)
+	public void processProposalsByTrait() throws JsonProcessingException {
+		ApiFetchConfig path = new ApiFetchConfig("GET", "/extended/v1/contract/by_trait?trait_abi={trait}", null);
+		String json = apiHelper.fetchFromApi(path, ProposalTrait.trait);
+		ProposalContracts contracts = (ProposalContracts)mapper.readValue(json, new TypeReference<ProposalContracts>() {});
+		for (Contract pc : contracts.getResults()) {
+			if (allowed(pc.getContractId())) {
+				Proposal p = merge(pc);
+				proposalRepository.save(p);
+			}
+		}
+	}
+	
+	@Scheduled(fixedDelay=180000) // every 3 mins
+	public void processProposalsFromDB() throws JsonProcessingException {
+		List<Proposal> proposals = proposalRepository.findAll();
+		// ApiFetchConfig path = new ApiFetchConfig("GET", "/extended/v1/contract/by_trait?trait_abi={trait}", null);
+		// String json = apiHelper.fetchFromApi(path, ProposalTrait.trait);
+		// ProposalContracts contracts = (ProposalContracts)mapper.readValue(json, new TypeReference<ProposalContracts>() {});
+		for (Proposal proposal : proposals) {
+//			if (allowed(pc.getContractId())) {
+//				Proposal p = merge(pc);
+//				proposalRepository.save(p);
+//			}
+			ApiFetchConfig path = new ApiFetchConfig("GET", "/extended/v1/contract/" + proposal.getContractId(), null);
+			try {
+				String json = apiHelper.fetchFromApi(path);
+				Contract contract = (Contract)mapper.readValue(json, new TypeReference<Contract>() {});
+				proposal.setContract(contract);
+				// Proposal p = merge(pc);
+				proposalRepository.save(proposal);
+			} catch (Exception e) {
+				// extension not found continue processing
+			}
+		}
+	}
+	
+	@Scheduled(fixedDelay=120000)
+	public void processProposalData() throws JsonProcessingException {
+		List<Proposal> props = proposalRepository.findAll();
+		for (Proposal p : props) {
+			try {
+				checkProposalStatus(p);
+			} catch (Exception e) {
+				logger.error("Error fetching proposal data: " + e.getMessage());
+			}
+		}
+	}
+
+	@Scheduled(fixedDelay=3600000) // hourly
 	public void processSubmissions() throws JsonProcessingException {
 		List<Proposal> proposals = proposalRepository.findByStatus("deploying");
 		checkTransactionStatus(proposals, "deployed");
 		proposals = proposalRepository.findByStatus("submitting");
 		checkTransactionStatus(proposals, "submitted");
+	}
+	
+	private boolean allowed(String contractId) {
+		boolean allowed = true;
+		String contractAddress = contractId.split("\\.")[0];
+		String contractName = contractId.split("\\.")[1];
+		if (contractName.equals("executor-dao")) {
+			allowed = false;
+		}
+		Proposer p = proposerRepository.findByStxAddress(contractAddress);
+		if (p == null) {
+			allowed = false;
+		}
+		return allowed;
 	}
 	
 	private void checkTransactionStatus(List<Proposal> proposals, String newStatus) throws JsonProcessingException {
@@ -79,37 +145,13 @@ public class ProposalWatcher {
 			proposalRepository.save(proposal);
 		}
 	}
-	
-	@Scheduled(fixedDelay=3600000)
-	public void processProposals() throws JsonProcessingException {
-		// ApiFetchConfig path = new ApiFetchConfig("GET", "/extended/v1/contract/by_trait?trait_abi=" + GitHubHelper.encodeValue(ExtensionTrait.trait), null);
-		ApiFetchConfig path = new ApiFetchConfig("GET", "/extended/v1/contract/by_trait?trait_abi={trait}", null);
-		String json = apiHelper.fetchFromApi(path, ProposalTrait.trait);
-		ProposalContracts contracts = (ProposalContracts)mapper.readValue(json, new TypeReference<ProposalContracts>() {});
-		for (Contract pc : contracts.getResults()) {
-			Proposal p = merge(pc);
-			proposalRepository.save(p);
-		}
-	}
-	
-	@Scheduled(fixedDelay=90000)
-	public void processProposalData() throws JsonProcessingException {
-		List<Proposal> props = proposalRepository.findAll();
-		for (Proposal p : props) {
-			try {
-				checkProposalSubmission(p);
-			} catch (Exception e) {
-				logger.error("Error fetching proposal data: " + e.getMessage());
-			}
-		}
-	}
-	
+		
 	public void processProposalData(String contractId) throws JsonProcessingException {
 		Proposal p = proposalRepository.findByContractId(contractId);
 		try {
-			checkProposalSubmission(p);
+			checkProposalStatus(p);
 		} catch (Exception e) {
-			logger.error("Error fetching proposal data: " + e.getMessage());
+			logger.error("Error fetching proposal data: ", e);
 		}
 	}
 	
@@ -134,21 +176,27 @@ public class ProposalWatcher {
 	 * @throws JsonProcessingException
 	 */
 	@Async
-	private void checkProposalSubmission(Proposal p) throws JsonProcessingException {
-		ProposalData pd = null;
-		Long funding = checkProposalFunding(p);
-		if (funding != null && funding > 0) {
-			p.setFunding(funding.intValue() / 1000000);
-			pd = checkProposalSubmission(snapshotVoting, p);
-			saveProposal(snapshotVoting, p, pd);
-		} else {
-			pd = checkProposalSubmission(proposalVoting, p);
-			saveProposal(proposalVoting, p, pd);
-		}
-		Long signals = checkEmergencyExecute(p);
-		if (signals != null && signals > 0) {
-			p.setEmergencySignals(signals.intValue());
-			saveProposal(emergencyExecute, p, pd);
+	private void checkProposalStatus(Proposal p) throws JsonProcessingException {
+		try {
+			ProposalData pd = null;
+			Long funding = checkProposalFunding(p);
+			if (funding != null) {
+				//if (funding != null && funding > 0) {
+				p.setFunding(funding.intValue() / 1000000);
+				pd = checkProposalSubmission(snapshotVoting, p);
+				saveProposal(snapshotVoting, p, pd);
+			} else {
+				pd = checkProposalSubmission(proposalVoting, p);
+				if (pd != null) saveProposal(proposalVoting, p, pd);
+			}
+			Long signals = checkEmergencyExecute(p);
+			if (signals != null && signals > 0) {
+				p.setEmergencySignals(signals.intValue());
+				saveProposal(emergencyExecute, p, pd);
+			}
+		} catch (Exception e) {
+			logger.error("checkProposalStatus: ", e);
+			throw e;
 		}
  	}
 	
@@ -160,85 +208,111 @@ public class ProposalWatcher {
 	}
 		
 	private ProposalData checkProposalSubmission(String votingContract, Proposal p) throws JsonProcessingException {
-		String contractAddress = deployer;
-		String contractName = votingContract;
-		String functionName = "get-proposal-data";
-		String param = "/contract-principal/" + p.getContractId().split("\\.")[0] + "/" + p.getContractId().split("\\.")[1];
-		String arg0 = apiHelper.cvConversion(param);
-		logger.info("Extension argument: " + arg0);
+		try {
+			String contractAddress = deployer;
+			String contractName = votingContract;
+			String functionName = "get-proposal-data";
+			String param = "/contract-principal/" + p.getContractId().split("\\.")[0] + "/" + p.getContractId().split("\\.")[1];
+			String arg0 = apiHelper.cvConversion(param);
+			logger.info("Extension argument: " + arg0);
 
-		PostData postd = new PostData();
-		postd.setArguments(new String[] { arg0 });
-		postd.setSender(contractAddress);
-        String path = "/v2/contracts/call-read/" + contractAddress + "/" + contractName + "/" + functionName;
-		ApiFetchConfig principal = new ApiFetchConfig("POST", path, postd);
-		String json = apiHelper.fetchFromApi(principal);
-		ProposalData pd = deserialise(functionName, contractAddress, json);
-		return pd;
+			PostData postd = new PostData();
+			postd.setArguments(new String[] { arg0 });
+			postd.setSender(contractAddress);
+			String path = "/v2/contracts/call-read/" + contractAddress + "/" + contractName + "/" + functionName;
+			ApiFetchConfig principal = new ApiFetchConfig("POST", path, postd);
+			String json = apiHelper.fetchFromApi(principal);
+			if (json.indexOf(":false") > -1) return null; 
+			ProposalData pd = deserialise(functionName, contractAddress, json);
+			return pd;
+		} catch (Exception e) {
+			logger.error("checkProposalSubmission: ", e);
+			return null;
+		}
  	}
 		
 	private Long checkProposalFunding(Proposal p) throws JsonProcessingException {
-		String contractAddress = deployer;
-		String contractName = fundedSubmission;
-		String functionName = "get-proposal-funding";
-		String param = "/contract-principal/" + p.getContractId().split("\\.")[0] + "/" + p.getContractId().split("\\.")[1];
-		String arg0 = apiHelper.cvConversion(param);
-		logger.info("Extension argument: " + arg0);
+		try {
+			String contractAddress = deployer;
+			String contractName = fundedSubmission;
+			String functionName = "get-proposal-funding";
+			String param = "/contract-principal/" + p.getContractId().split("\\.")[0] + "/" + p.getContractId().split("\\.")[1];
+			String arg0 = apiHelper.cvConversion(param);
+			logger.info("checkProposalFunding: argument: " + arg0);
 
-		PostData postd = new PostData();
-		postd.setArguments(new String[] { arg0 });
-		postd.setSender(contractAddress);
-        String path = "/v2/contracts/call-read/" + contractAddress + "/" + contractName + "/" + functionName;
-		ApiFetchConfig principal = new ApiFetchConfig("POST", path, postd);
-		String json = apiHelper.fetchFromApi(principal);
-		Long funding = deserialiseExecution(functionName, contractAddress, json);
-		return funding;
+			PostData postd = new PostData();
+			postd.setArguments(new String[] { arg0 });
+			postd.setSender(contractAddress);
+			String path = "/v2/contracts/call-read/" + contractAddress + "/" + contractName + "/" + functionName;
+			ApiFetchConfig principal = new ApiFetchConfig("POST", path, postd);
+			String json = apiHelper.fetchFromApi(principal);
+			Long funding = deserialiseExecution(functionName, contractAddress, json);
+			return funding;
+		} catch (Exception e) {
+			logger.error("checkProposalFunding: ", e);
+			return null;
+		}
  	}
 		
 	private Long checkEmergencyExecute(Proposal p) throws JsonProcessingException {
-		String contractAddress = deployer;
-		String contractName = emergencyExecute;
-		String functionName = "get-signals";
-		String param = "/contract-principal/" + p.getContractId().split("\\.")[0] + "/" + p.getContractId().split("\\.")[1];
-		String arg0 = apiHelper.cvConversion(param);
-		logger.info("Extension argument: " + arg0);
+		try {
+			String contractAddress = deployer;
+			String contractName = emergencyExecute;
+			String functionName = "get-signals";
+			String param = "/contract-principal/" + p.getContractId().split("\\.")[0] + "/" + p.getContractId().split("\\.")[1];
+			String arg0 = apiHelper.cvConversion(param);
+			logger.info("Extension argument: " + arg0);
 
-		PostData postd = new PostData();
-		postd.setArguments(new String[] { arg0 });
-		postd.setSender(contractAddress);
-        String path = "/v2/contracts/call-read/" + contractAddress + "/" + contractName + "/" + functionName;
-		ApiFetchConfig principal = new ApiFetchConfig("POST", path, postd);
-		String json = apiHelper.fetchFromApi(principal);
-		Long signals = deserialiseExecution(functionName, contractAddress, json);
-		return signals;
+			PostData postd = new PostData();
+			postd.setArguments(new String[] { arg0 });
+			postd.setSender(contractAddress);
+			String path = "/v2/contracts/call-read/" + contractAddress + "/" + contractName + "/" + functionName;
+			ApiFetchConfig principal = new ApiFetchConfig("POST", path, postd);
+			String json = apiHelper.fetchFromApi(principal);
+			Long signals = deserialiseExecution(functionName, contractAddress, json);
+			return signals;
+		} catch (Exception e) {
+			logger.error("checkEmergencyExecute: ", e);
+			return 0L;
+		}
  	}
 		
 	private void checkProposalExecution(Proposal p) throws JsonProcessingException {
-		String contractAddress = p.getContractId().split("\\.")[0];
-		String contractName = "executor-dao"; // p.getContractId().split("\\.")[1];
-		String functionName = "executed-at";
-		String param = "/contract-principal/" + contractAddress + "/" + p.getContractId().split("\\.")[1];
-		String arg0 = apiHelper.cvConversion(param);
-		logger.info("Extension argument: " + arg0);
+		try {
+			String contractAddress = p.getContractId().split("\\.")[0];
+			String contractName = "executor-dao"; // p.getContractId().split("\\.")[1];
+			String functionName = "executed-at";
+			String param = "/contract-principal/" + contractAddress + "/" + p.getContractId().split("\\.")[1];
+			String arg0 = apiHelper.cvConversion(param);
+			logger.info("Extension argument: " + arg0);
 
-		PostData postd = new PostData();
-		postd.setArguments(new String[] { arg0 });
-		postd.setSender(contractAddress);
-        String path = "/v2/contracts/call-read/" + contractAddress + "/" + contractName + "/" + functionName;
-		ApiFetchConfig principal = new ApiFetchConfig("POST", path, postd);
-		String json = apiHelper.fetchFromApi(principal);
-		Long blockHeight = deserialiseExecution(functionName, contractAddress, json);
-		if (blockHeight != null) p.setExecutedAt(blockHeight.intValue());
-		proposalRepository.save(p);
+			PostData postd = new PostData();
+			postd.setArguments(new String[] { arg0 });
+			postd.setSender(contractAddress);
+			String path = "/v2/contracts/call-read/" + contractAddress + "/" + contractName + "/" + functionName;
+			ApiFetchConfig principal = new ApiFetchConfig("POST", path, postd);
+			String json = apiHelper.fetchFromApi(principal);
+			Long blockHeight = deserialiseExecution(functionName, contractAddress, json);
+			if (blockHeight != null) p.setExecutedAt(blockHeight.intValue());
+			proposalRepository.save(p);
+		} catch (Exception e) {
+			logger.error("checkProposalExecution: ", e);
+			return;
+		}
  	}
 		
 	private ProposalData deserialise(String functionName, String contractId, String json) throws JsonMappingException, JsonProcessingException {
-		ReadResult contractRead = (ReadResult)mapper.readValue(json, new TypeReference<ReadResult>() {});
-		String param = "/to-json/" + contractRead.getResult();
-		json = apiHelper.cvConversion(param);
-		TypeValue typeValue = (TypeValue)mapper.readValue(json, new TypeReference<TypeValue>() {});
-		if (typeValue.getValue() == null) return null;
-		return ProposalData.fromClarity(typeValue.getValue().getValue());
+		try {
+			ReadResult contractRead = (ReadResult)mapper.readValue(json, new TypeReference<ReadResult>() {});
+			String param = "/to-json/" + contractRead.getResult();
+			json = apiHelper.cvConversion(param);
+			TypeValue typeValue = (TypeValue)mapper.readValue(json, new TypeReference<TypeValue>() {});
+			if (typeValue.getValue() == null) return null;
+			return ProposalData.fromClarity(typeValue.getValue().getValue());
+		} catch (Exception e) {
+			logger.error("deserialise: ", e);
+			return null;
+		}
 	}
 	
 	private Long deserialiseExecution(String functionName, String contractId, String json) throws JsonMappingException, JsonProcessingException {
@@ -257,6 +331,7 @@ public class ProposalWatcher {
 			Object o = val.get("value");
 			return Long.parseLong(String.valueOf(o));
 		} catch (Exception e) {
+			logger.error("deserialiseExecution: ", e);
 			return null;
 		}
 	}

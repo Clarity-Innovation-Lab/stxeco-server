@@ -33,7 +33,6 @@ public class UserPropertiesWatcher {
 	@Autowired private ObjectMapper mapper;
 	@Autowired private DaoPropertyRepository daoPropertyRepository;
 	@Autowired private UserPropertyRepository userPropertyRepository;
-	@Value("${eco-stx.stax.daojsapi}") String basePath;
 	@Value("${stacks.dao.deployer}") String contractAddress;
 	private static String governanceTokenContract = "ede000-governance-token";
 	private static String emergencyProposals = "ede003-emergency-proposals";

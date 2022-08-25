@@ -117,9 +117,9 @@ public class ApiHelper {
 		try {
 			return restTemplate.getForObject(url, String.class, data);
 		} catch (Exception e) {
-			response = getRespFromStacks(principal);
+			url = stacksPathSecondary + principal.getPath();
+			return restTemplate.getForObject(url, String.class, data);
 		}
-		return response.getBody();
 	}
 	
 	private ResponseEntity<String> getRespFromStacks(ApiFetchConfig principal) {

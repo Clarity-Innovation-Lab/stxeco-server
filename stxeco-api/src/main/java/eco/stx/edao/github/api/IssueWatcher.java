@@ -39,7 +39,7 @@ public class IssueWatcher {
 	@Autowired private JsonIssueRepository jsonIssueRepository;
 	private static final String REPO = "stacksgov/sips";
 
-	@Scheduled(fixedDelay=960000) // 16 minutes
+	@Scheduled(fixedDelay=3600000)
 	public void processProposals() throws IOException {
 		GitHub gitHub = gitHubHelper.setup();
 		this.gHRepository = gitHub.getRepository(REPO);

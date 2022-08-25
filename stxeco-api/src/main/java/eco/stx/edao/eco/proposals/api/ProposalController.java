@@ -15,18 +15,26 @@ import org.springframework.web.bind.annotation.RestController;
 import com.fasterxml.jackson.core.JsonProcessingException;
 
 import eco.stx.edao.eco.proposals.service.ProposalRepository;
+import eco.stx.edao.eco.proposals.service.ProposerRepository;
 import eco.stx.edao.eco.proposals.service.domain.Proposal;
+import eco.stx.edao.eco.proposals.service.domain.Proposer;
 
 
 @RestController
 public class ProposalController {
 
+	@Autowired private ProposerRepository proposerRepository;
 	@Autowired private ProposalRepository proposalRepository;
 	@Autowired private ProposalWatcher proposalWatcher;
 
+	@GetMapping(value = "/v2/process-proposals-by-trait")
+	public void proposalsByTrait() throws JsonProcessingException {
+ 		proposalWatcher.processProposalsByTrait();
+	}
+
 	@GetMapping(value = "/v2/process-proposals")
-	public void proposalRead() throws JsonProcessingException {
- 		proposalWatcher.processProposals();
+	public void proposalsFromDB() throws JsonProcessingException {
+ 		proposalWatcher.processProposalsFromDB();
 	}
 
 	@GetMapping(value = "/v2/process-proposal-data")
@@ -47,6 +55,14 @@ public class ProposalController {
 	@GetMapping(value = "/v2/proposals")
 	public List<Proposal> fetch() {
 		return proposalRepository.findAll();
+	}
+
+	@PostMapping(value = "/v2/proposer")
+	public Proposer proposer(@RequestBody Proposer proposer) {
+		if (proposer.getId() == null) {
+			return proposerRepository.insert(proposer);
+		}
+		return proposerRepository.save(proposer);
 	}
 
 	@PostMapping(value = "/v2/proposals")

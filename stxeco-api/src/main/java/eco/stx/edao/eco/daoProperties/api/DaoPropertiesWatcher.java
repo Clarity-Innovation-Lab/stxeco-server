@@ -1,6 +1,5 @@
 package eco.stx.edao.eco.daoProperties.api;
 
-import java.util.List;
 import java.util.Optional;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -9,7 +8,6 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.scheduling.annotation.Scheduled;
-import org.springframework.web.client.RestOperations;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
@@ -17,11 +15,12 @@ import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import eco.stx.edao.eco.daoProperties.api.model.DaoPropertyType;
+import eco.stx.edao.eco.daoProperties.api.model.DaoPropertyTypeValue;
 import eco.stx.edao.eco.daoProperties.service.DaoPropertyRepository;
 import eco.stx.edao.eco.daoProperties.service.domain.DaoProperty;
+import eco.stx.edao.stacks.ApiFetchConfig;
 import eco.stx.edao.stacks.ApiHelper;
 import eco.stx.edao.stacks.PostData;
-import eco.stx.edao.stacks.ApiFetchConfig;
 import eco.stx.edao.stacks.ReadResult;
 
 @Configuration
@@ -32,14 +31,14 @@ public class DaoPropertiesWatcher {
 	@Autowired private ApiHelper apiHelper;
 	@Autowired private ObjectMapper mapper;
 	@Autowired private DaoPropertyRepository daoPropertyRepository;
-	@Value("${eco-stx.stax.daojsapi}") String basePath;
 	@Value("${stacks.dao.deployer}") String contractAddress;
 	private static String governanceTokenContract = "ede000-governance-token";
 	private static String proposalSubmissionContract = "ede002-threshold-proposal-submission";
 	private static String fundedSubmissionContract = "ede008-funded-proposal-submission";
+	private static String emergencyExecute = "ede004-emergency-execute";
 
 
-	@Scheduled(fixedDelay=60000)
+	@Scheduled(fixedDelay=3600000)
 	public void process() throws JsonProcessingException {
 		fetchParam(governanceTokenContract, "get-total-supply", null);
 		fetchParam(proposalSubmissionContract, "get-parameter", "minimum-proposal-start-delay");
@@ -49,6 +48,7 @@ public class DaoPropertiesWatcher {
 		fetchParam(fundedSubmissionContract, "get-parameter", "funding-cost");
 		fetchParam(fundedSubmissionContract, "get-parameter", "proposal-duration");
 		fetchParam(fundedSubmissionContract, "get-parameter", "proposal-start-delay");
+		fetchParam(emergencyExecute, "get-signals-required", null);
 	}
 	
 	@Async
@@ -99,9 +99,14 @@ public class DaoPropertiesWatcher {
 		ReadResult contractRead = (ReadResult)mapper.readValue(json, new TypeReference<ReadResult>() {});
 		String param = "/to-json/" + contractRead.getResult();
 		json = apiHelper.cvConversion(param);
-		DaoPropertyType typeValue = (DaoPropertyType)mapper.readValue(json, new TypeReference<DaoPropertyType>() {});
-		if (typeValue.getValue() == null) return null;
-		return (Object)typeValue.getValue().getValue();
+		try {
+			DaoPropertyType typeValue = (DaoPropertyType)mapper.readValue(json, new TypeReference<DaoPropertyType>() {});
+			if (typeValue.getValue() == null) return null;
+			return (Object)typeValue.getValue().getValue();
+		} catch (Exception e) {
+			DaoPropertyTypeValue typeValue = (DaoPropertyTypeValue)mapper.readValue(json, new TypeReference<DaoPropertyTypeValue>() {});
+			return (Object)typeValue.getValue();
+		}
 	}
 
 }

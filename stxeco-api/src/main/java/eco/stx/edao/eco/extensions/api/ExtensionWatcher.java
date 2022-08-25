@@ -34,7 +34,6 @@ public class ExtensionWatcher {
 	@Autowired private ApiHelper apiHelper;
 	@Autowired private ObjectMapper mapper;
 	@Autowired private ExtensionRepository extensionRepository;
-	@Value("${eco-stx.stax.daojsapi}") String basePath;
 	private static String[] EXTENSIONS = new String[] {
 			"ede000-governance-token", 
 			"ede001-proposal-voting", 
@@ -48,7 +47,7 @@ public class ExtensionWatcher {
 			"ede009-governance-token-sale"
 	};
 	
-	@Scheduled(fixedDelay=60000)
+	@Scheduled(fixedDelay=3600000)
 	public void processExtensions() throws JsonProcessingException {
 		// ApiFetchConfig path = new ApiFetchConfig("GET", "/extended/v1/contract/by_trait?trait_abi=" + GitHubHelper.encodeValue(ExtensionTrait.trait), null);
 		for (String extension : EXTENSIONS) {
@@ -65,7 +64,7 @@ public class ExtensionWatcher {
 		// https://stacks-node-api.mainnet.stacks.co/extended/v1/contract/{contract_id}
 	}
 	
-	@Scheduled(fixedDelay=90000)
+	@Scheduled(fixedDelay=3600000)
 	public void processExtensionData() throws JsonProcessingException {
 		List<Extension> props = extensionRepository.findAll();
 		for (Extension p : props) {

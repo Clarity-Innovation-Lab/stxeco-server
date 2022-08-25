@@ -61,6 +61,4 @@ public class DaoController {
 		map.put("info", fetchInfo());
 		return map;
 	}
-	
-
 }

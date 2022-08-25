@@ -38,7 +38,7 @@ application:
    mongoIp: mongodb://localhost
 eco-stx:
    stax:
-      daojsapi: http://172.17.0.1:8280
+      daojsapi: http://stxeco_express:8080
 
 ---
 
@@ -63,7 +63,7 @@ eco-stx:
       stacks-path-secondary: https://stacks-node-api.testnet.stacks.co
       admin-contract-address: ST1NXBK3K5YYMD6FD41MVNP3JS1GABZ8TRVX023PT
       admin-contract-name: appmap-v1
-      daojsapi: http://daojsapi:8280
+      daojsapi: http://stxeco_express:8080
 
 ---
 
@@ -81,5 +81,5 @@ eco-stx:
       stacks-path-secondary: https://stacks-node-api.mainnet.stacks.co
       admin-contract-address: SP3QSAJQ4EA8WXEDSRRKMZZ29NH91VZ6C5X88FGZQ
       admin-contract-name: appmap-v1
-      daojsapi: http://daojsapi:8280
+      daojsapi: http://stxeco_express:8080
    

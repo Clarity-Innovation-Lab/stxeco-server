@@ -4,7 +4,7 @@
 
 export SERVICE=$1
 export DEPLOYMENT=$2
-export SERVER=locke.brightblock.org
+export SERVER=popper.brightblock.org
 if [ "$DEPLOYMENT" == "prod" ]; then
   SERVER=chomsky.brightblock.org;
 fi
@@ -40,28 +40,28 @@ echo --- stxeco:copying to [ $PATH_DEPLOY ] ------------------------------------
 printf "\n\n Connectiong to $SERVER.\n"
 
 if [ -z "${SERVICE}" ]; then
-ssh -i ~/.ssh/id_rsa -p 7019 bob@$SERVER "
+ssh -i ~/.ssh/id_rsa -p 22 bob@$SERVER "
   cd /home/bob/hubgit/stxeco-server
   # git pull
   # cp .env.production .env
   cat .env
   docker login
   . ~/.profile
-  docker-compose -f docker-compose-images.yml pull
-  docker-compose -f docker-compose-images.yml down
-  docker-compose -f docker-compose-images.yml up -d
+  docker compose -f docker-compose-images.yml pull
+  docker compose -f docker-compose-images.yml down
+  docker compose -f docker-compose-images.yml up -d
 ";
 else
-ssh -i ~/.ssh/id_rsa -p 7019 bob@$SERVER "
+ssh -i ~/.ssh/id_rsa -p 22 bob@$SERVER "
   cd /home/bob/hubgit/stxeco-server
   cat .env
   docker login
   . ~/.profile
-  docker-compose -f docker-compose-images.yml pull  
-  docker-compose -f docker-compose-images.yml stop $SERVICE
-  docker-compose -f docker-compose-images.yml rm $SERVICE 
-  docker-compose -f docker-compose-images.yml create $SERVICE
-  docker-compose -f docker-compose-images.yml start $SERVICE
+  docker compose -f docker-compose-images.yml pull  
+  docker compose -f docker-compose-images.yml stop $SERVICE
+  docker compose -f docker-compose-images.yml rm $SERVICE 
+  docker compose -f docker-compose-images.yml create $SERVICE
+  docker compose -f docker-compose-images.yml start $SERVICE
 ";
 fi
 
