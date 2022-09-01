@@ -1,85 +1,79 @@
 stacks:
-   dao:
-      deployer: ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM
+  dao:
+    deployer: ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM
 eco-stx:
-   security:
-      enable-csrf: false
-   mongo:
-      mongoIp: mongodb://mongodb
-      mongoPort: 27017
-      mongoDbName: daoapi
-   binance:
-      rate-path: https://api.binance.com/api/v3/ticker/24hr
-      fiat-list: GBP,USD,EUR,AUD,JPY,HKD
-   ticker:
-      rate-path: https://blockchain.info/ticker
-   btcfee:
-      fee-rate: https://bitcoinfees.earn.com/api/v1/fees/recommended
-      fee-list: https://bitcoinfees.earn.com/api/v1/fees/list
-   stax:
-      stacks-path-primary: http://docker.for.mac.localhost
-      stacks-path-secondary: https://localhost
-      admin-contract-address: ST1ESYCGJB5Z5NBHS39XPC70PGC14WAQK5XXNQYDW
-      admin-contract-name: appmap-v1
-      daojsapi: http://docker.for.mac.localhost:8280
+  security:
+    enable-csrf: false
+  mongo:
+    mongoIp: mongodb://mongodb
+    mongoPort: 27017
+    mongoDbName: daoapi
+  binance:
+    rate-path: https://api.binance.com/api/v3/ticker/24hr
+    fiat-list: GBP,USD,EUR,AUD,JPY,HKD
+  ticker:
+    rate-path: https://blockchain.info/ticker
+  btcfee:
+    fee-rate: https://bitcoinfees.earn.com/api/v1/fees/recommended
+    fee-list: https://bitcoinfees.earn.com/api/v1/fees/list
+  stax:
+    stacks-path-primary: http://docker.for.mac.localhost
+    stacks-path-secondary: https://localhost
+    admin-contract-address: ST1ESYCGJB5Z5NBHS39XPC70PGC14WAQK5XXNQYDW
+    admin-contract-name: appmap-v1
+    daojsapi: http://docker.for.mac.localhost:8280
 
 ---
-
 spring:
-   profiles: test
+  profiles: test
 application:
-   mongoIp: mongodb://localhost
+  mongoIp: mongodb://localhost
 
 ---
-
 spring:
-    profiles: linux-dev
+  profiles: linux-dev
 application:
-   mongoIp: mongodb://localhost
+  mongoIp: mongodb://localhost
 eco-stx:
-   stax:
-      daojsapi: http://stxeco_express:8080
+  stax:
+    daojsapi: http://stxeco_express:8080
 
 ---
-
 spring:
-    profiles: docker-dev
+  profiles: docker-dev
 application:
-   mongoIp: mongodb://localhost
+  mongoIp: mongodb://localhost
 
 ---
-
 spring:
-    profiles: staging
+  profiles: staging
 application:
-   mongoIp: mongodb://mongodb
-   mongoPort: 27017
+  mongoIp: mongodb://mongodb
+  mongoPort: 27017
 stacks:
-   dao:
-      deployer: ST167Z6WFHMV0FZKFCRNWZ33WTB0DFBCW9M1FW3AY
+  dao:
+    deployer: ST167Z6WFHMV0FZKFCRNWZ33WTB0DFBCW9M1FW3AY
 eco-stx:
-   stax:
-      stacks-path-primary: http://176.58.109.133
-      stacks-path-secondary: https://stacks-node-api.testnet.stacks.co
-      admin-contract-address: ST1NXBK3K5YYMD6FD41MVNP3JS1GABZ8TRVX023PT
-      admin-contract-name: appmap-v1
-      daojsapi: http://stxeco_express:8080
+  stax:
+    stacks-path-primary: http://23.239.9.92
+    stacks-path-secondary: https://stacks-node-api.testnet.stacks.co
+    admin-contract-address: ST1NXBK3K5YYMD6FD41MVNP3JS1GABZ8TRVX023PT
+    admin-contract-name: appmap-v1
+    daojsapi: http://stxeco_express:8080
 
 ---
-
 spring:
-    profiles: production
+  profiles: production
 application:
-   mongoIp: mongodb://mongodb
-   mongoPort: 27017
+  mongoIp: mongodb://mongodb
+  mongoPort: 27017
 stacks:
-   dao:
-      deployer: SP167Z6WFHMV0FZKFCRNWZ33WTB0DFBCW9QRVJ627
+  dao:
+    deployer: SP167Z6WFHMV0FZKFCRNWZ33WTB0DFBCW9QRVJ627
 eco-stx:
-   stax:
-      stacks-path-primary: http://45.79.131.55
-      stacks-path-secondary: https://stacks-node-api.mainnet.stacks.co
-      admin-contract-address: SP3QSAJQ4EA8WXEDSRRKMZZ29NH91VZ6C5X88FGZQ
-      admin-contract-name: appmap-v1
-      daojsapi: http://stxeco_express:8080
-   
+  stax:
+    stacks-path-primary: http://45.79.131.55
+    stacks-path-secondary: https://stacks-node-api.mainnet.stacks.co
+    admin-contract-address: SP3QSAJQ4EA8WXEDSRRKMZZ29NH91VZ6C5X88FGZQ
+    admin-contract-name: appmap-v1
+    daojsapi: http://stxeco_express:8080

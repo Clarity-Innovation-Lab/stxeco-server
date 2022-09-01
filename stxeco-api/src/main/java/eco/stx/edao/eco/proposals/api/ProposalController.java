@@ -32,6 +32,11 @@ public class ProposalController {
  		proposalWatcher.processProposalsByTrait();
 	}
 
+	@GetMapping(value = "/v2/process-proposal/{contractId}")
+	public void processProposal(@PathVariable String contractId) throws JsonProcessingException {
+ 		proposalWatcher.processProposal(contractId);
+	}
+
 	@GetMapping(value = "/v2/process-proposals")
 	public void proposalsFromDB() throws JsonProcessingException {
  		proposalWatcher.processProposalsFromDB();

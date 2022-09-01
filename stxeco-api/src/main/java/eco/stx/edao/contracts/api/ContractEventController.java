@@ -7,7 +7,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.EnableAsync;
 import org.springframework.scheduling.annotation.EnableScheduling;
-import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RestController;
@@ -37,17 +36,18 @@ public class ContractEventController {
 	
 	@GetMapping(value = "/v2/contract/events/{contractId}")
 	public List<ContractEvent> contractEvents(@PathVariable String contractId) {
-		return contractsRepository.findByContractId(contractId);
+		//return contractsRepository.findByContractId(contractId);
+		return null;
 	}
 	
 	@GetMapping(value = "/v2/contract/consume-events")
 	public void contractEvents() {
-		readEvents();
+		//readEvents();
 	}
 	
-	@Scheduled(fixedDelay=3600000)
+	//@Scheduled(fixedDelay=3600000)
 	public void readContractEvents() throws JsonProcessingException {
-		readEvents();
+		//readEvents();
 	}
 
 	private void readEvents() {

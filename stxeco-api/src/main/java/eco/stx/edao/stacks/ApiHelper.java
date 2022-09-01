@@ -4,12 +4,15 @@ import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.annotation.TypeAlias;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.client.RestOperations;
@@ -35,9 +38,10 @@ import lombok.ToString;
 @ToString
 @AllArgsConstructor
 @NoArgsConstructor
-@TypeAlias(value = "GitHubHelper")
+@TypeAlias(value = "ApiHelper")
 public class ApiHelper {
 
+    private static final Logger logger = LogManager.getLogger(ApiHelper.class);
 	@Autowired private ObjectMapper mapper;
 	@Autowired private RestOperations restTemplate;
 	@Value("${spring.profiles.active}") private String activeProfile;
@@ -106,9 +110,18 @@ public class ApiHelper {
 				response = restTemplate.exchange(url, HttpMethod.GET, getRequestEntity(principal), String.class);
 			}
 		} catch (Exception e) {
-			response = getRespFromStacks(principal);
+			logger.error("Unable to fetch from url=" + url + "\n e=" + e.getMessage());
+			try {
+				response = getRespFromStacks(principal);
+			} catch (Exception e1) {
+				logger.error("Unable to fetch from url=" + stacksPathSecondary + principal.getPath() + "\n e1=" + e1.getMessage());
+			}
 		}
-		return response.getBody();
+		if (response != null && response.getStatusCode() == HttpStatus.OK) {
+			return response.getBody();
+		} else {
+			throw new RuntimeException("Unable to fetch from: " + url + " or " + stacksPathSecondary + principal.getPath());
+		}
 	}
 	
 	public String fetchFromApi(ApiFetchConfig principal, String data) throws JsonProcessingException {

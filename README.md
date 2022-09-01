@@ -53,6 +53,7 @@ Deploy on mainnet using
 ```
 
 Note: Requires your ssh key to be installed on the server.
+
 ## Notes on Java API
 
 The API is written in Java and has no documentation as yet. Quickest way to locate
@@ -66,7 +67,7 @@ These classes contain all the api mappings. E.g.
 
 ```java
 @GetMapping(value = "/v2/gh-issues")
-// inside 
+// inside
 @RestController
 public class IssueController { ... }
 ```

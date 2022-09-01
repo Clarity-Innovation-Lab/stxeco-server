@@ -1,11 +1,8 @@
-'use strict';
-const BigNum = require('bn.js');
-const axios = require('axios');
+"use strict";
+const BigNum = require("bn.js");
+const axios = require("axios");
 
-const {
-  StacksTestnet,
-  StacksMainnet
-} = require('@stacks/network');
+const { StacksTestnet, StacksMainnet } = require("@stacks/network");
 const {
   uintCV,
   standardPrincipalCV,
@@ -28,19 +25,19 @@ const {
   broadcastTransaction,
   makeStandardSTXPostCondition,
   makeStandardFungiblePostCondition,
-  makeStandardNonFungiblePostCondition
-} = require('@stacks/transactions');
-const express = require('express');
-const crypto = require('crypto');
-const EC = require('elliptic').ec;
-const shajs = require('sha.js');
-const { resolve } = require('path');
+  makeStandardNonFungiblePostCondition,
+} = require("@stacks/transactions");
+const express = require("express");
+const crypto = require("crypto");
+const EC = require("elliptic").ec;
+const shajs = require("sha.js");
+const { resolve } = require("path");
 
-var ec = new EC('secp256k1');
+var ec = new EC("secp256k1");
 
 // Constants
-const PORT = 8080
-const HOST = '0.0.0.0';
+const PORT = 8080;
+const HOST = "0.0.0.0";
 const PUBKEY = process.env.STACKS_PUBKEY;
 const PRIKEY = process.env.STACKS_PRIKEY;
 const OPENNODE_API_KEY_SM = process.env.OPENNODE_API_KEY_SM;
@@ -50,285 +47,352 @@ const NETWORK = process.env.STACKS_NETWORK;
 const STXECO_API = process.env.STXECO_API;
 const ALLOWED_IP = process.env.STACKS_ALLOWED_IP;
 
-const networkToUse = (NETWORK === 'mainnet') ? new StacksMainnet() : new StacksTestnet()
+const networkToUse =
+  NETWORK === "mainnet" ? new StacksMainnet() : new StacksTestnet();
 
 const toOnChainAmount = function (amount, gftPrecision) {
   try {
     if (!gftPrecision) {
-      amount = amount * precision
-      return Math.round(amount * precision) / precision
+      amount = amount * precision;
+      return Math.round(amount * precision) / precision;
     } else {
-      const newPrec = Math.pow(10, gftPrecision)
-      amount = amount * newPrec
-      return Math.round(amount * newPrec) / newPrec
+      const newPrec = Math.pow(10, gftPrecision);
+      amount = amount * newPrec;
+      return Math.round(amount * newPrec) / newPrec;
     }
   } catch {
-    return 0
+    return 0;
   }
-}
+};
 const getAdminMintManyArgs = function (data) {
-  const entryList = []
+  const entryList = [];
   for (let i = 0; i < data.entries.length; i++) {
-    const entry = data.entries[i]
+    const entry = data.entries[i];
     const tupCV = tupleCV({
       recipient: standardPrincipalCV(entry.recipient),
-      nftIndex: uintCV(entry.nftIndex)
-    })
-    entryList.push(tupCV)
+      nftIndex: uintCV(entry.nftIndex),
+    });
+    entryList.push(tupCV);
   }
-  return [listCV(entryList)]
-}
+  return [listCV(entryList)];
+};
 
 const getAdminMintManySfts = function (data) {
-  const entryList = []
+  const entryList = [];
   for (let i = 0; i < data.entries.length; i++) {
-    const entry = data.entries[i]
+    const entry = data.entries[i];
     const tupCV = tupleCV({
       nftIndex: uintCV(entry.nftIndex),
       amount: uintCV(entry.amount),
-      recipient: standardPrincipalCV(entry.recipient)
-    })
-    entryList.push(tupCV)
+      recipient: standardPrincipalCV(entry.recipient),
+    });
+    entryList.push(tupCV);
   }
-  return [listCV(entryList)]
-}
+  return [listCV(entryList)];
+};
 
 const mysha256 = function (message) {
-  let encoded
-  if (typeof message === 'string') {
-    encoded = new TextEncoder().encode(message)
-  } else if (typeof message === 'number') {
+  let encoded;
+  if (typeof message === "string") {
+    encoded = new TextEncoder().encode(message);
+  } else if (typeof message === "number") {
     // const buf = Buffer.alloc(8)
     // buf.writeUInt8(message, 0)
     // encoded = new Uint8Array(buf)
-    const buf = Buffer.alloc(16)
-    buf.writeUIntLE(message, 0, 6)
-    encoded = Uint8Array.from(buf)
+    const buf = Buffer.alloc(16);
+    buf.writeUIntLE(message, 0, 6);
+    encoded = Uint8Array.from(buf);
   } else {
     // encoded = new Uint8Array(message)
-    encoded = Uint8Array.from(message)
+    encoded = Uint8Array.from(message);
   }
   // eslint-disable-next-line new-cap
   // const hashFunction = new sha256()
-  return shajs('sha256').update(encoded).digest('hex')
+  return shajs("sha256").update(encoded).digest("hex");
   // return hashFunction.update(encoded).digest()
   // return hashSha256(encoded)
-}
+};
 const signPayloadEC = function (message, privateKey) {
-  const hash = mysha256(message)
-  const ecPrivate = ec.keyFromPrivate(privateKey)
-  const signature = ecPrivate.sign(hash)
-  const coordinateValueBytes = 32
-  const r = leftPadHexToLength(signature.r.toString('hex'), coordinateValueBytes * 2)
-  const s = leftPadHexToLength(signature.s.toString('hex'), coordinateValueBytes * 2)
-  if (signature.recoveryParam === undefined || signature.recoveryParam === null) {
-    throw new Error('"signature.recoveryParam" is not set')
+  const hash = mysha256(message);
+  const ecPrivate = ec.keyFromPrivate(privateKey);
+  const signature = ecPrivate.sign(hash);
+  const coordinateValueBytes = 32;
+  const r = leftPadHexToLength(
+    signature.r.toString("hex"),
+    coordinateValueBytes * 2
+  );
+  const s = leftPadHexToLength(
+    signature.s.toString("hex"),
+    coordinateValueBytes * 2
+  );
+  if (
+    signature.recoveryParam === undefined ||
+    signature.recoveryParam === null
+  ) {
+    throw new Error('"signature.recoveryParam" is not set');
   }
-  const recoveryParam = intToHexString(signature.recoveryParam, 1)
-  console.log('signature.recoveryParam', signature.recoveryParam)
-  const recoverableSignatureString = r + s + recoveryParam
+  const recoveryParam = intToHexString(signature.recoveryParam, 1);
+  console.log("signature.recoveryParam", signature.recoveryParam);
+  const recoverableSignatureString = r + s + recoveryParam;
   // const combined = r + s
   // return Buffer.from(combined, 'hex')
   // return (Buffer.from(recoverableSignatureString, 'hex'))
-  return recoverableSignatureString
-}
+  return recoverableSignatureString;
+};
 
 const broadcast = function (transaction, recipient, microstx) {
   return new Promise((resolve, reject) => {
     console.log(`transaction: ${transaction}\n`);
-    const txdata = new Uint8Array(transaction.serialize())
+    const txdata = new Uint8Array(transaction.serialize());
     const headers = {
-      'Content-Type': 'application/octet-stream'
-    }
-    axios.post(STXECO_API + '/daoapi/v2/broadcast', txdata, { headers: headers }).then(response => {
-      console.log('Successfully sent transaction from: ' + PUBKEY);
-      console.log('Amount (micro stx): ' + microstx);
-      console.log('To: ' + recipient);
-      resolve(response.data)
-    }).catch((error) => {
-      console.log('Failed to post to daoapi for broadcast');
-      reject(error)
-    })
-  })
-}
+      "Content-Type": "application/octet-stream",
+    };
+    axios
+      .post(STXECO_API + "/daoapi/v2/broadcast", txdata, { headers: headers })
+      .then((response) => {
+        console.log("Successfully sent transaction from: " + PUBKEY);
+        console.log("Amount (micro stx): " + microstx);
+        console.log("To: " + recipient);
+        resolve(response.data);
+      })
+      .catch((error) => {
+        console.log("Failed to post to daoapi for broadcast");
+        reject(error);
+      });
+  });
+};
 const getSTXMintPostConds = function (data) {
-  let postConditionAddress = data.recipient
-  let amount = new BigNum(toOnChainAmount(data.price + 0.001))
+  let postConditionAddress = data.recipient;
+  let amount = new BigNum(toOnChainAmount(data.price + 0.001));
   if (data.batchOption > 1) {
-    amount = new BigNum(toOnChainAmount((data.price * data.batchOption + 0.001)))
+    amount = new BigNum(toOnChainAmount(data.price * data.batchOption + 0.001));
   }
-  const standardFungiblePostCondition = makeStandardSTXPostCondition(postConditionAddress, FungibleConditionCode.Less, amount)
-  const postConds = [standardFungiblePostCondition]
-  return postConds
-}
+  const standardFungiblePostCondition = makeStandardSTXPostCondition(
+    postConditionAddress,
+    FungibleConditionCode.Less,
+    amount
+  );
+  const postConds = [standardFungiblePostCondition];
+  return postConds;
+};
 const getGFTMintPostConds = function (data) {
-  let postConditionAddress = data.recipient
-  const postConditionCode = FungibleConditionCode.LessEqual
-  const postConditionAmount = new BigNum(toOnChainAmount((data.price * data.batchOption + 0.001), data.sipTenToken.decimals))
-  const fungibleAssetInfo = createAssetInfo(data.sipTenToken.contractId.split('.')[0], data.sipTenToken.contractId.split('.')[1], data.sipTenToken.contractId.split('.')[1])
-  const standardFungiblePostCondition = makeStandardFungiblePostCondition(postConditionAddress, postConditionCode, postConditionAmount, fungibleAssetInfo)
-  const postConds = [standardFungiblePostCondition]
-  return postConds
-}
+  let postConditionAddress = data.recipient;
+  const postConditionCode = FungibleConditionCode.LessEqual;
+  const postConditionAmount = new BigNum(
+    toOnChainAmount(
+      data.price * data.batchOption + 0.001,
+      data.sipTenToken.decimals
+    )
+  );
+  const fungibleAssetInfo = createAssetInfo(
+    data.sipTenToken.contractId.split(".")[0],
+    data.sipTenToken.contractId.split(".")[1],
+    data.sipTenToken.contractId.split(".")[1]
+  );
+  const standardFungiblePostCondition = makeStandardFungiblePostCondition(
+    postConditionAddress,
+    postConditionCode,
+    postConditionAmount,
+    fungibleAssetInfo
+  );
+  const postConds = [standardFungiblePostCondition];
+  return postConds;
+};
 
 const fetchNonce = function () {
   return new Promise((resolve, reject) => {
-    getNonce(PUBKEY, networkToUse).then((txNonce) => {
-      console.log('Nonce: ' + txNonce + ' for pubkey ' + PUBKEY);
-      resolve(txNonce)
-    }).catch((error) => {
-      console.log('Failed to fetch nonce');
-      reject(error)
-    })
-  })
-}
+    getNonce(PUBKEY, networkToUse)
+      .then((txNonce) => {
+        console.log("Nonce: " + txNonce + " for pubkey " + PUBKEY);
+        resolve(txNonce);
+      })
+      .catch((error) => {
+        console.log("Failed to fetch nonce");
+        reject(error);
+      });
+  });
+};
 const checkOpenNodeApiKey = function (data) {
   const received = data.hashed_order;
-  const calculated = crypto.createHmac('sha256', OPENNODE_API_KEY_SM).update(data.paymentId).digest('hex');
+  const calculated = crypto
+    .createHmac("sha256", OPENNODE_API_KEY_SM)
+    .update(data.paymentId)
+    .digest("hex");
   if (received !== calculated) {
-    console.log('checkOpenNodeApiKey: received=' + received);
-    console.log('checkOpenNodeApiKey: calculated=' + calculated);
-    console.log('checkOpenNodeApiKey: paymentId=' + paymentId);
-    return false
+    console.log("checkOpenNodeApiKey: received=" + received);
+    console.log("checkOpenNodeApiKey: calculated=" + calculated);
+    console.log("checkOpenNodeApiKey: paymentId=" + paymentId);
+    return false;
   }
-  return true
-}
+  return true;
+};
 
 const transferNFT = function (data) {
   return new Promise((resolve, reject) => {
-    if (!data.batchOption) data.batchOption = 1
-    console.log('transfer nft: data=', data);
-    if (!checkOpenNodeApiKey(data)) throw new Error('Not called via open node!')
+    if (!data.batchOption) data.batchOption = 1;
+    console.log("transfer nft: data=", data);
+    if (!checkOpenNodeApiKey(data))
+      throw new Error("Not called via open node!");
     const nonFungibleAssetInfo = createAssetInfo(
-      data.contractId.split('.')[0],
-      data.contractId.split('.')[1],
-      (data.assetName) ? data.assetName : data.contractName.split('-')[0]
-    )
+      data.contractId.split(".")[0],
+      data.contractId.split(".")[1],
+      data.assetName ? data.assetName : data.contractName.split("-")[0]
+    );
     // Post-condition check failure on non-fungible asset ST1ESYCGJB5Z5NBHS39XPC70PGC14WAQK5XXNQYDW.thisisnumberone-v1::my-nft owned by STFJEDEQB1Y1CQ7F04CS62DCS5MXZVSNXXN413ZG: UInt(3) Sent
-    const standardNonFungiblePostCondition = makeStandardNonFungiblePostCondition(
-      data.owner, // postConditionAddress
-      NonFungibleConditionCode.DoesNotOwn,
-      nonFungibleAssetInfo, // contract and nft info
-      uintCV(data.nftIndex)
-    )
+    const standardNonFungiblePostCondition =
+      makeStandardNonFungiblePostCondition(
+        data.owner, // postConditionAddress
+        NonFungibleConditionCode.DoesNotOwn,
+        nonFungibleAssetInfo, // contract and nft info
+        uintCV(data.nftIndex)
+      );
     const txOptions = {
-      contractAddress: data.contractId.split('.')[0],
-      contractName: data.contractId.split('.')[1],
+      contractAddress: data.contractId.split(".")[0],
+      contractName: data.contractId.split(".")[1],
       fee: new BigNum(50000),
-      functionName: 'transfer',
-      functionArgs: [uintCV(data.nftIndex), standardPrincipalCV(data.owner), standardPrincipalCV(data.recipient)],
+      functionName: "transfer",
+      functionArgs: [
+        uintCV(data.nftIndex),
+        standardPrincipalCV(data.owner),
+        standardPrincipalCV(data.recipient),
+      ],
       senderKey: PRIKEY,
       network: networkToUse,
       postConditions: [standardNonFungiblePostCondition],
     };
     makeContractCall(txOptions).then((transaction) => {
-      broadcastTransaction(transaction, networkToUse).then((response) => {
-        console.log('transferNFT: Tx broadcast', response);
-        resolve(response)
-      }).catch((error) => {
-        console.log('Failed to broadcast: ' + error);
-        reject(error)
-      })
-    })
-  })
-}
+      broadcastTransaction(transaction, networkToUse)
+        .then((response) => {
+          console.log("transferNFT: Tx broadcast", response);
+          resolve(response);
+        })
+        .catch((error) => {
+          console.log("Failed to broadcast: " + error);
+          reject(error);
+        });
+    });
+  });
+};
 const mintNFT = function (data) {
   return new Promise((resolve, reject) => {
-    if (!data.batchOption) data.batchOption = 1
-    console.log('mint nft: data=', data);
-    if (!checkOpenNodeApiKey(data)) throw new Error('Not called via open node!')
+    if (!data.batchOption) data.batchOption = 1;
+    console.log("mint nft: data=", data);
+    if (!checkOpenNodeApiKey(data))
+      throw new Error("Not called via open node!");
     // const tender = contractPrincipalCV(data.tokenContractAddress, data.tokenContractName)
-    const localPCs = [] // (data.tokenContractName === 'unwrapped-stx-token') ? getSTXMintPostConds(data) : getGFTMintPostConds(data)
+    const localPCs = []; // (data.tokenContractName === 'unwrapped-stx-token') ? getSTXMintPostConds(data) : getGFTMintPostConds(data)
     const txOptions = {
       senderKey: PRIKEY,
       network: networkToUse,
       fee: new BigNum(5000),
-      postConditionMode: (data.postConditionMode) ? data.postConditionMode : PostConditionMode.Deny,
-      postConditions: (data.postConditions) ? data.postConditions : localPCs,
-      contractAddress: data.contractId.split('.')[0],
-      contractName: data.contractId.split('.')[1],
-      functionName: (data.batchOption === 1) ? 'mint-with' : 'mint-with-many',
-      functionArgs: (data.batchOption === 1) ? [tender] : [uintCV(data.batchOption), tender]
-    }
+      postConditionMode: data.postConditionMode
+        ? data.postConditionMode
+        : PostConditionMode.Deny,
+      postConditions: data.postConditions ? data.postConditions : localPCs,
+      contractAddress: data.contractId.split(".")[0],
+      contractName: data.contractId.split(".")[1],
+      functionName: data.batchOption === 1 ? "mint-with" : "mint-with-many",
+      functionArgs:
+        data.batchOption === 1 ? [tender] : [uintCV(data.batchOption), tender],
+    };
     makeContractCall(txOptions).then((transaction) => {
-      broadcastTransaction(transaction, networkToUse).then((response) => {
-        console.log('mintNFT: Tx broadcast', response);
-        resolve(response)
-      }).catch((error) => {
-        console.log('Failed to broadcast transaction: ' + error);
-        reject(error)
-      })
-    })
-  })
-}
+      broadcastTransaction(transaction, networkToUse)
+        .then((response) => {
+          console.log("mintNFT: Tx broadcast", response);
+          resolve(response);
+        })
+        .catch((error) => {
+          console.log("Failed to broadcast transaction: " + error);
+          reject(error);
+        });
+    });
+  });
+};
 const adminMintNFT = function (data) {
   return new Promise((resolve, reject) => {
-    if (!data.batchOption) data.batchOption = 1
-    console.log('admin mint nft: data=', data);
-    if (!checkOpenNodeApiKey(data)) throw new Error('Not called via open node!')
+    if (!data.batchOption) data.batchOption = 1;
+    console.log("admin mint nft: data=", data);
+    if (!checkOpenNodeApiKey(data))
+      throw new Error("Not called via open node!");
     // const tender = contractPrincipalCV(data.tokenContractAddress, data.tokenContractName)
-    const localPCs = [] // (data.tokenContractName === 'unwrapped-stx-token') ? getSTXMintPostConds(data) : getGFTMintPostConds(data)
+    const localPCs = []; // (data.tokenContractName === 'unwrapped-stx-token') ? getSTXMintPostConds(data) : getGFTMintPostConds(data)
     const txOptions = {
       senderKey: PRIKEY,
       network: networkToUse,
       fee: new BigNum(5000),
-      postConditionMode: (data.postConditionMode) ? data.postConditionMode : PostConditionMode.Deny,
-      postConditions: (data.postConditions) ? data.postConditions : localPCs,
-      contractAddress: data.contractId.split('.')[0],
-      contractName: data.contractId.split('.')[1],
-      functionName: (data.batchOption === 1) ? 'admin-mint' : 'admin-mint-many'
-    }
+      postConditionMode: data.postConditionMode
+        ? data.postConditionMode
+        : PostConditionMode.Deny,
+      postConditions: data.postConditions ? data.postConditions : localPCs,
+      contractAddress: data.contractId.split(".")[0],
+      contractName: data.contractId.split(".")[1],
+      functionName: data.batchOption === 1 ? "admin-mint" : "admin-mint-many",
+    };
     if (data.batchOption === 1) {
-      txOptions.functionArgs = [standardPrincipalCV(data.recipient), uintCV(data.nftIndex)]
+      txOptions.functionArgs = [
+        standardPrincipalCV(data.recipient),
+        uintCV(data.nftIndex),
+      ];
     } else {
-      txOptions.functionArgs = getAdminMintManyArgs(data)
+      txOptions.functionArgs = getAdminMintManyArgs(data);
     }
     makeContractCall(txOptions).then((transaction) => {
-      broadcastTransaction(transaction, networkToUse).then((response) => {
-        console.log('mintNFT: Tx broadcast', response);
-        resolve(response)
-      }).catch((error) => {
-        console.log('Failed to broadcast transaction: ' + error);
-        reject(error)
-      })
-    })
-  })
-}
+      broadcastTransaction(transaction, networkToUse)
+        .then((response) => {
+          console.log("mintNFT: Tx broadcast", response);
+          resolve(response);
+        })
+        .catch((error) => {
+          console.log("Failed to broadcast transaction: " + error);
+          reject(error);
+        });
+    });
+  });
+};
 const adminMintSFT = function (data) {
   return new Promise((resolve, reject) => {
-    if (!data.batchOption) data.batchOption = 1
-    console.log('admin mint sft: data=', data);
-    if (!checkOpenNodeApiKey(data)) throw new Error('Not called via open node!')
-    const localPCs = []
+    if (!data.batchOption) data.batchOption = 1;
+    console.log("admin mint sft: data=", data);
+    if (!checkOpenNodeApiKey(data))
+      throw new Error("Not called via open node!");
+    const localPCs = [];
     const txOptions = {
       senderKey: PRIKEY,
       network: networkToUse,
       fee: new BigNum(5000),
-      postConditionMode: (data.postConditionMode) ? data.postConditionMode : PostConditionMode.Deny,
-      postConditions: (data.postConditions) ? data.postConditions : localPCs,
-      contractAddress: data.contractId.split('.')[0],
-      contractName: data.contractId.split('.')[1],
-      functionName: (data.batchOption === 1) ? 'admin-mint' : 'admin-mint-many'
-    }
+      postConditionMode: data.postConditionMode
+        ? data.postConditionMode
+        : PostConditionMode.Deny,
+      postConditions: data.postConditions ? data.postConditions : localPCs,
+      contractAddress: data.contractId.split(".")[0],
+      contractName: data.contractId.split(".")[1],
+      functionName: data.batchOption === 1 ? "admin-mint" : "admin-mint-many",
+    };
     if (data.batchOption === 1) {
-      txOptions.functionArgs = [uintCV(data.nftIndex), uintCV(data.amount), standardPrincipalCV(data.recipient)]
+      txOptions.functionArgs = [
+        uintCV(data.nftIndex),
+        uintCV(data.amount),
+        standardPrincipalCV(data.recipient),
+      ];
     } else {
-      txOptions.functionArgs = getAdminMintManySfts(data)
+      txOptions.functionArgs = getAdminMintManySfts(data);
     }
     makeContractCall(txOptions).then((transaction) => {
-      broadcastTransaction(transaction, networkToUse).then((response) => {
-        console.log('mintSFT: Tx broadcast', response);
-        resolve(response)
-      }).catch((error) => {
-        console.log('Failed to broadcast transaction: ' + error);
-        reject(error)
-      })
-    })
-  })
-}
+      broadcastTransaction(transaction, networkToUse)
+        .then((response) => {
+          console.log("mintSFT: Tx broadcast", response);
+          resolve(response);
+        })
+        .catch((error) => {
+          console.log("Failed to broadcast transaction: " + error);
+          reject(error);
+        });
+    });
+  });
+};
 const makeStacksTransfer = function (recipient, microstx, txNonce) {
   return new Promise((resolve, reject) => {
-    const amountBN = new BigNum(microstx)
+    const amountBN = new BigNum(microstx);
     console.log(`microstx: ${microstx}\n`);
     console.log(`recipient: ${recipient}\n`);
     const txOptions = {
@@ -336,32 +400,36 @@ const makeStacksTransfer = function (recipient, microstx, txNonce) {
       amount: amountBN,
       senderKey: PRIKEY,
       network: networkToUse,
-      memo: 'Stacks Mate STX Swap.'
-    }
+      memo: "Stacks Mate STX Swap.",
+    };
     if (txNonce) {
       console.log(`txNonce: ${txNonce}\n`);
-      const nonce = new BigNum(txNonce)
-      txOptions.nonce = nonce
+      const nonce = new BigNum(txNonce);
+      txOptions.nonce = nonce;
     }
-    makeSTXTokenTransfer(txOptions).then((transaction) => {
-      broadcast(transaction, recipient, microstx).then((resp) => {
-        console.log('Tx broadcast');
-        resolve(resp)
-      }).catch((error) => {
-        console.log('Failed to broadcast transaction from: ' + PUBKEY);
-        reject(error)
+    makeSTXTokenTransfer(txOptions)
+      .then((transaction) => {
+        broadcast(transaction, recipient, microstx)
+          .then((resp) => {
+            console.log("Tx broadcast");
+            resolve(resp);
+          })
+          .catch((error) => {
+            console.log("Failed to broadcast transaction from: " + PUBKEY);
+            reject(error);
+          });
       })
-    }).catch((error) => {
-      console.log('Failed to make transaction from: ' + PUBKEY);
-      reject(error)
-    })
-  })
-}
+      .catch((error) => {
+        console.log("Failed to make transaction from: " + PUBKEY);
+        reject(error);
+      });
+  });
+};
 
-function runAsyncWrapper (callback) {
+function runAsyncWrapper(callback) {
   return function (req, res, next) {
-    callback(req, res, next).catch((err => {
-      if (typeof err === 'object' && err !== null) {
+    callback(req, res, next).catch((err) => {
+      if (typeof err === "object" && err !== null) {
         console.log(Object.keys(err));
         if (err.response) {
           console.log(err.response.data);
@@ -371,27 +439,29 @@ function runAsyncWrapper (callback) {
           res.status(500).send(err);
         }
       } else {
-        console.log('error not object');
+        console.log("error not object");
         res.status(500).send(err.response.data.message);
       }
-      console.log('-----------------------------------------------------------------');
-    }))
-  }
+      console.log(
+        "-----------------------------------------------------------------"
+      );
+    });
+  };
 }
 
 // App
 const app = express();
-app.use(express.json())
+app.use(express.json());
 
-app.get('/', (req, res) => {
-  res.send('hi there...');
+app.get("/", (req, res) => {
+  res.send("hi there...");
 });
 
-app.get('/daojsapi/extension-data/:address/:name', (req, res) => {
-  const ip = req.headers['x-forwarded-for'] || req.socket.remoteAddress;
-  const contractCV = contractPrincipalCV(req.params.address, req.params.name)
-  const contractCVS = serializeCV(contractCV)
-  const contractCVSH = contractCVS.toString('hex')
+app.get("/daojsapi/extension-data/:address/:name", (req, res) => {
+  const ip = req.headers["x-forwarded-for"] || req.socket.remoteAddress;
+  const contractCV = contractPrincipalCV(req.params.address, req.params.name);
+  const contractCVS = serializeCV(contractCV);
+  const contractCVSH = contractCVS.toString("hex");
   console.log(ip); // ip address of the user
   if (ip.indexOf(ALLOWED_IP) > -1) {
     res.send(contractCVSH);
@@ -399,11 +469,11 @@ app.get('/daojsapi/extension-data/:address/:name', (req, res) => {
     res.sendStatus(401);
   }
 });
-app.get('/daojsapi/contract-principal/:address/:name', (req, res) => {
-  const ip = req.headers['x-forwarded-for'] || req.socket.remoteAddress;
-  const contractCV = contractPrincipalCV(req.params.address, req.params.name)
-  const contractCVS = serializeCV(contractCV)
-  const contractCVSH = contractCVS.toString('hex')
+app.get("/daojsapi/contract-principal/:address/:name", (req, res) => {
+  const ip = req.headers["x-forwarded-for"] || req.socket.remoteAddress;
+  const contractCV = contractPrincipalCV(req.params.address, req.params.name);
+  const contractCVS = serializeCV(contractCV);
+  const contractCVSH = contractCVS.toString("hex");
   console.log(ip); // ip address of the user
   if (ip.indexOf(ALLOWED_IP) > -1) {
     res.send(contractCVSH);
@@ -411,11 +481,11 @@ app.get('/daojsapi/contract-principal/:address/:name', (req, res) => {
     res.sendStatus(401);
   }
 });
-app.get('/daojsapi/uint/:param', (req, res) => {
-  const ip = req.headers['x-forwarded-for'] || req.socket.remoteAddress;
-  const contractCV = uintCV(req.params.param)
-  const contractCVS = serializeCV(contractCV)
-  const contractCVSH = contractCVS.toString('hex')
+app.get("/daojsapi/uint/:param", (req, res) => {
+  const ip = req.headers["x-forwarded-for"] || req.socket.remoteAddress;
+  const contractCV = uintCV(req.params.param);
+  const contractCVS = serializeCV(contractCV);
+  const contractCVSH = contractCVS.toString("hex");
   console.log(ip); // ip address of the user
   if (ip.indexOf(ALLOWED_IP) > -1) {
     res.send(contractCVSH);
@@ -423,11 +493,11 @@ app.get('/daojsapi/uint/:param', (req, res) => {
     res.sendStatus(401);
   }
 });
-app.get('/daojsapi/principal/:address', (req, res) => {
-  const ip = req.headers['x-forwarded-for'] || req.socket.remoteAddress;
-  const contractCV = standardPrincipalCV(req.params.address)
-  const contractCVS = serializeCV(contractCV)
-  const contractCVSH = contractCVS.toString('hex')
+app.get("/daojsapi/principal/:address", (req, res) => {
+  const ip = req.headers["x-forwarded-for"] || req.socket.remoteAddress;
+  const contractCV = standardPrincipalCV(req.params.address);
+  const contractCVS = serializeCV(contractCV);
+  const contractCVSH = contractCVS.toString("hex");
   console.log(ip); // ip address of the user
   if (ip.indexOf(ALLOWED_IP) > -1) {
     res.send(contractCVSH);
@@ -435,10 +505,10 @@ app.get('/daojsapi/principal/:address', (req, res) => {
     res.sendStatus(401);
   }
 });
-app.get('/daojsapi/string-ascii/:param', (req, res) => {
-  const ip = req.headers['x-forwarded-for'] || req.socket.remoteAddress;
-  const param = stringAsciiCV(req.params.param)
-  const buffer = serializeCV(param).toString('hex')
+app.get("/daojsapi/string-ascii/:param", (req, res) => {
+  const ip = req.headers["x-forwarded-for"] || req.socket.remoteAddress;
+  const param = stringAsciiCV(req.params.param);
+  const buffer = serializeCV(param).toString("hex");
   console.log(ip); // ip address of the user
   if (ip.indexOf(ALLOWED_IP) > -1) {
     res.send(buffer);
@@ -446,9 +516,9 @@ app.get('/daojsapi/string-ascii/:param', (req, res) => {
     res.sendStatus(401);
   }
 });
-app.get('/daojsapi/to-json/:result', (req, res) => {
-  const ip = req.headers['x-forwarded-for'] || req.socket.remoteAddress;
-  const result = cvToJSON(deserializeCV(req.params.result))
+app.get("/daojsapi/to-json/:result", (req, res) => {
+  const ip = req.headers["x-forwarded-for"] || req.socket.remoteAddress;
+  const result = cvToJSON(deserializeCV(req.params.result));
   console.log(ip); // ip address of the user
   if (ip.indexOf(ALLOWED_IP) > -1) {
     res.send(result);
@@ -457,55 +527,86 @@ app.get('/daojsapi/to-json/:result', (req, res) => {
   }
 });
 
-app.get('/daojsapi/signme/:assetHash', (req, res) => {
-  const ip = req.headers['x-forwarded-for'] || req.socket.remoteAddress;
+app.get("/daojsapi/signme/:assetHash", (req, res) => {
+  const ip = req.headers["x-forwarded-for"] || req.socket.remoteAddress;
   console.log(ip); // ip address of the user
   if (ip.indexOf(ALLOWED_IP) > -1) {
-    const sig = signPayloadEC(req.params.assetHash, SIGNER_PRIKEY)
+    const sig = signPayloadEC(req.params.assetHash, SIGNER_PRIKEY);
     res.send(sig);
   } else {
     res.sendStatus(401);
   }
 });
 
-app.post('/daojsapi/transfer-nft', runAsyncWrapper(async(req, res) => {
-  const transfer = await transferNFT(req.body)
-  res.send(transfer);
-}))
+app.post(
+  "/daojsapi/transfer-nft",
+  runAsyncWrapper(async (req, res) => {
+    const transfer = await transferNFT(req.body);
+    res.send(transfer);
+  })
+);
 
-app.post('/daojsapi/mint-nft', runAsyncWrapper(async(req, res) => {
-  const transfer = await mintNFT(req.body)
-  res.send(transfer);
-}))
+app.post(
+  "/daojsapi/mint-nft",
+  runAsyncWrapper(async (req, res) => {
+    const transfer = await mintNFT(req.body);
+    res.send(transfer);
+  })
+);
 
-app.post('/daojsapi/admin-mint-nft', runAsyncWrapper(async(req, res) => {
-  const transfer = await adminMintNFT(req.body)
-  res.send(transfer);
-}))
+app.post(
+  "/daojsapi/admin-mint-nft",
+  runAsyncWrapper(async (req, res) => {
+    const transfer = await adminMintNFT(req.body);
+    res.send(transfer);
+  })
+);
 
-app.post('/daojsapi/admin-mint-sft', runAsyncWrapper(async(req, res) => {
-  const transfer = await adminMintSFT(req.body)
-  res.send(transfer);
-}))
+app.post(
+  "/daojsapi/admin-mint-sft",
+  runAsyncWrapper(async (req, res) => {
+    const transfer = await adminMintSFT(req.body);
+    res.send(transfer);
+  })
+);
 
-app.post('/daojsapi/:tokenId/:sender/:recipient', runAsyncWrapper(async(req, res) => {
-  const transfer = await makeStacksTransfer(req.params.recipient, req.params.microstx)
-  res.send(transfer);
-}))
+app.post(
+  "/daojsapi/:tokenId/:sender/:recipient",
+  runAsyncWrapper(async (req, res) => {
+    const transfer = await makeStacksTransfer(
+      req.params.recipient,
+      req.params.microstx
+    );
+    res.send(transfer);
+  })
+);
 
-app.post('/daojsapi/:recipient/:microstx', runAsyncWrapper(async(req, res) => {
-  const transfer = await makeStacksTransfer(req.params.recipient, req.params.microstx)
-  res.send(transfer);
-}))
+app.post(
+  "/daojsapi/:recipient/:microstx",
+  runAsyncWrapper(async (req, res) => {
+    const transfer = await makeStacksTransfer(
+      req.params.recipient,
+      req.params.microstx
+    );
+    res.send(transfer);
+  })
+);
 
-app.post('/daojsapi/:recipient/:nonce/:microstx', runAsyncWrapper(async(req, res) => {
-  let txNonce = req.params.nonce
-  if (txNonce < 0) {
-    txNonce = await fetchNonce()
-  }
-  const transfer = await makeStacksTransfer(req.params.recipient, req.params.microstx, txNonce)
-  res.send(transfer);
-}))
+app.post(
+  "/daojsapi/:recipient/:nonce/:microstx",
+  runAsyncWrapper(async (req, res) => {
+    let txNonce = req.params.nonce;
+    if (txNonce < 0) {
+      txNonce = await fetchNonce();
+    }
+    const transfer = await makeStacksTransfer(
+      req.params.recipient,
+      req.params.microstx,
+      txNonce
+    );
+    res.send(transfer);
+  })
+);
 
 app.listen(PORT, HOST);
 console.log(`Running with ${ALLOWED_IP}\n`);

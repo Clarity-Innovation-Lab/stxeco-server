@@ -20,10 +20,12 @@ import lombok.ToString;
 @TypeAlias(value = "Contract")
 public class Contract {
 
-	public String abi;
+	// public String abi;
 	@JsonProperty("tx_id") public String txId;
+	@JsonProperty("tx_status") public String txStatus;
 	@JsonProperty("source_code") public String sourceCode;
 	@JsonProperty("block_height") public String blockHeight;
 	@JsonProperty("contract_id") public String contractId;
+	@JsonProperty("sender_address") public String senderAddress;
 	public boolean canonical;
 }

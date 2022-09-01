@@ -9,8 +9,8 @@ import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import eco.stx.edao.contracts.service.domain.ContractEvents;
-import eco.stx.edao.stacks.ApiHelper;
 import eco.stx.edao.stacks.ApiFetchConfig;
+import eco.stx.edao.stacks.ApiHelper;
 
 @Service
 public class ContractEventsServiceImpl implements ContractEventsService {
@@ -31,12 +31,12 @@ public class ContractEventsServiceImpl implements ContractEventsService {
 				if (events.getResults() != null)
 					events.getResults().addAll(events.getResults());
 				Long count = events.getLimit() * events.getOffset() + events.getLimit();
-				if (count >= events.getTotal()) {
+				if (count > 100 || count >= events.getTotal()) {
 					read = false;
 				}
 				offset += 200;
 			} catch (Exception e) {
-				// content is null try next..
+				read = false;
 			}
 		}
 		contractsRepository.saveAll(events.getResults());
@@ -47,8 +47,8 @@ public class ContractEventsServiceImpl implements ContractEventsService {
 		p.setHttpMethod("GET");
 		p.setPath(path);
 		try {
-			String json = apiHelper.fetchFromApi(p);
-			return json;
+			//String json = apiHelper.fetchFromApi(p);
+			return null;
 		} catch (Exception e) {
 			return null;
 		}

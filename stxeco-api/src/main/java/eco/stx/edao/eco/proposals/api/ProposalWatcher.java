@@ -18,6 +18,7 @@ import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import eco.stx.edao.eco.api.model.Contract;
+import eco.stx.edao.eco.api.model.ContractSource;
 import eco.stx.edao.eco.proposals.api.model.ProposalContracts;
 import eco.stx.edao.eco.proposals.api.model.ProposalTrait;
 import eco.stx.edao.eco.proposals.service.ProposalRepository;
@@ -65,23 +66,56 @@ public class ProposalWatcher {
 	@Scheduled(fixedDelay=180000) // every 3 mins
 	public void processProposalsFromDB() throws JsonProcessingException {
 		List<Proposal> proposals = proposalRepository.findAll();
-		// ApiFetchConfig path = new ApiFetchConfig("GET", "/extended/v1/contract/by_trait?trait_abi={trait}", null);
-		// String json = apiHelper.fetchFromApi(path, ProposalTrait.trait);
-		// ProposalContracts contracts = (ProposalContracts)mapper.readValue(json, new TypeReference<ProposalContracts>() {});
 		for (Proposal proposal : proposals) {
-//			if (allowed(pc.getContractId())) {
-//				Proposal p = merge(pc);
-//				proposalRepository.save(p);
-//			}
-			ApiFetchConfig path = new ApiFetchConfig("GET", "/extended/v1/contract/" + proposal.getContractId(), null);
+			processProposalFromDB(proposal);
+		}
+	}
+	
+	public void processProposal(String contractId) throws JsonProcessingException {
+		Proposal proposal = proposalRepository.findByContractId(contractId);
+		processProposalFromDB(proposal);
+	}
+	
+	private void processProposalFromDB(Proposal proposal) throws JsonProcessingException {
+		ApiFetchConfig path = null;
+		try {
+			if (proposal.getContract() != null) {
+				String txStatus = proposal.getContract().getTxStatus();
+				if (txStatus != null && (txStatus.equals("success") || txStatus.equals("failed"))) {
+					return;
+				}
+			}
+			String contractAddress = proposal.getContractId().split("\\.")[0];
+			String contractName = proposal.getContractId().split("\\.")[1];
+			path = new ApiFetchConfig("GET", "/v2/contracts/source/" + contractAddress + "/" + contractName + "?proof=0", null);
+			String json = apiHelper.fetchFromApi(path);
+			logger.info("Found json at path1: " + path.getPath() + "\n---\n" + json);
+			ContractSource contract = (ContractSource)mapper.readValue(json, new TypeReference<ContractSource>() {});
+			Contract c = new Contract();
+			c.setBlockHeight(contract.getPublish_height());
+			c.setContractId(proposal.getContractId());
+			c.setSourceCode(contract.getSource());
+			c.setTxId(proposal.getDeployTxId());
+			c.setTxStatus("success");
+			proposal.setContract(c);
+			proposalRepository.save(proposal);
+		} catch (Exception e) {
 			try {
-				String json = apiHelper.fetchFromApi(path);
-				Contract contract = (Contract)mapper.readValue(json, new TypeReference<Contract>() {});
+				logger.error("Error reading contract from path=" + path.getPath(), e);
+				TransactionFromApiBean tx = apiHelper.fetchTransaction(proposal.getDeployTxId());
+				Contract contract =  proposal.getContract();
+				if (contract == null) contract = new Contract();
+				if (tx.getTx_status().equals("pending")) {
+					contract.setTxStatus("pending");
+				} else if (tx.getTx_status().equals("success")) {
+					contract.setTxStatus("success");
+				} else {
+					contract.setTxStatus("failed");
+				}
 				proposal.setContract(contract);
-				// Proposal p = merge(pc);
 				proposalRepository.save(proposal);
-			} catch (Exception e) {
-				// extension not found continue processing
+			} catch (Exception e1) {
+				logger.error("Unable to read contract from path=" + path.getPath(), e1);
 			}
 		}
 	}
@@ -91,7 +125,9 @@ public class ProposalWatcher {
 		List<Proposal> props = proposalRepository.findAll();
 		for (Proposal p : props) {
 			try {
-				checkProposalStatus(p);
+				if (p.getContract().getTxStatus().equals("success")) {
+					checkProposalStatus(p);
+				}
 			} catch (Exception e) {
 				logger.error("Error fetching proposal data: " + e.getMessage());
 			}
@@ -178,6 +214,7 @@ public class ProposalWatcher {
 	@Async
 	private void checkProposalStatus(Proposal p) throws JsonProcessingException {
 		try {
+			if (!p.getContract().getTxStatus().equals("success")) return;
 			ProposalData pd = null;
 			Long funding = checkProposalFunding(p);
 			if (funding != null) {
@@ -186,6 +223,7 @@ public class ProposalWatcher {
 				pd = checkProposalSubmission(snapshotVoting, p);
 				saveProposal(snapshotVoting, p, pd);
 			} else {
+				p.setFunding(-1);
 				pd = checkProposalSubmission(proposalVoting, p);
 				if (pd != null) saveProposal(proposalVoting, p, pd);
 			}
@@ -209,6 +247,7 @@ public class ProposalWatcher {
 		
 	private ProposalData checkProposalSubmission(String votingContract, Proposal p) throws JsonProcessingException {
 		try {
+			if (!p.getContract().getTxStatus().equals("success")) return null;
 			String contractAddress = deployer;
 			String contractName = votingContract;
 			String functionName = "get-proposal-data";
@@ -233,6 +272,7 @@ public class ProposalWatcher {
 		
 	private Long checkProposalFunding(Proposal p) throws JsonProcessingException {
 		try {
+			if (!p.getContract().getTxStatus().equals("success")) return null;
 			String contractAddress = deployer;
 			String contractName = fundedSubmission;
 			String functionName = "get-proposal-funding";
@@ -256,6 +296,7 @@ public class ProposalWatcher {
 		
 	private Long checkEmergencyExecute(Proposal p) throws JsonProcessingException {
 		try {
+			if (!p.getContract().getTxStatus().equals("success")) return null;
 			String contractAddress = deployer;
 			String contractName = emergencyExecute;
 			String functionName = "get-signals";
@@ -279,6 +320,7 @@ public class ProposalWatcher {
 		
 	private void checkProposalExecution(Proposal p) throws JsonProcessingException {
 		try {
+			if (!p.getContract().getTxStatus().equals("success")) return;
 			String contractAddress = p.getContractId().split("\\.")[0];
 			String contractName = "executor-dao"; // p.getContractId().split("\\.")[1];
 			String functionName = "executed-at";
