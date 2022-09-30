@@ -34,7 +34,7 @@ public class DaoPropertiesWatcher {
 	@Value("${stacks.dao.deployer}") String contractAddress;
 	private static String governanceTokenContract = "ede000-governance-token";
 	private static String proposalSubmissionContract = "ede002-threshold-proposal-submission";
-	private static String fundedSubmissionContract = "ede008-funded-proposal-submission";
+	private static String fundedSubmissionContract = "ede008-funded-proposal-submission-v2";
 	private static String emergencyExecute = "ede004-emergency-execute";
 
 
@@ -97,6 +97,7 @@ public class DaoPropertiesWatcher {
 	
 	private Object deserialise(String functionName, String contractId, String json) throws JsonMappingException, JsonProcessingException {
 		ReadResult contractRead = (ReadResult)mapper.readValue(json, new TypeReference<ReadResult>() {});
+		if (contractRead.getResult() == null) return null;
 		String param = "/to-json/" + contractRead.getResult();
 		json = apiHelper.cvConversion(param);
 		try {

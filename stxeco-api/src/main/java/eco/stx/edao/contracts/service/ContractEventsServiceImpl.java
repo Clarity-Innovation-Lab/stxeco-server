@@ -1,5 +1,7 @@
 package eco.stx.edao.contracts.service;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -8,38 +10,56 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+import eco.stx.edao.contracts.service.domain.ContractEvent;
 import eco.stx.edao.contracts.service.domain.ContractEvents;
+import eco.stx.edao.contracts.service.domain.VoteEvent;
+import eco.stx.edao.contracts.service.domain.VoteEventWrapper;
 import eco.stx.edao.stacks.ApiFetchConfig;
 import eco.stx.edao.stacks.ApiHelper;
 
 @Service
 public class ContractEventsServiceImpl implements ContractEventsService {
 
+    private static final Logger logger = LogManager.getLogger(ContractEventsServiceImpl.class);
 	@Autowired private ApiHelper apiHelper;
 	@Autowired private ObjectMapper mapper;
-	@Autowired private ContractEventRepository contractsRepository;
+	@Autowired private ContractEventRepository contractEventRepository;
 
 	@Override public void consumeContractEvents(String contractId) throws JsonMappingException, JsonProcessingException {
-		String path = "/extended/v1/contract/" + contractId + "/events?limit=200&offset=";
+		//Optional<Long> offsetO = contractEventRepository.countByContract_id(contractId);
+		long offset = 0;
+		//if (offsetO.isPresent()) offset = offsetO.get();
+		String path = "/extended/v1/contract/" + contractId + "/events?limit=50&offset=";
 		boolean read = true;
-		int offset = 0;
+		// contractEventRepository.deleteByContract_id(contractId);
 		ContractEvents events = null;
 		while (read) {
 			String json = read(path + offset);
 			try {
 				events = (ContractEvents)  mapper.readValue(json, new TypeReference<ContractEvents>() {});
-				if (events.getResults() != null)
-					events.getResults().addAll(events.getResults());
-				Long count = events.getLimit() * events.getOffset() + events.getLimit();
-				if (count > 100 || count >= events.getTotal()) {
+				if (events.getResults() != null && events.getResults().size() > 0) {
+					for (ContractEvent ce : events.getResults()) {
+						if (ce.getContract_log().getValue().getRepr().indexOf("vote") > -1) {
+							ce.setVoteEvent(deserialise(ce.getContract_log().getValue().getHex()));
+						}
+						// events.getResults().add(ce);
+						ContractEvent cedb = contractEventRepository.findOneByHex(ce.getContract_log().getValue().getHex());
+						if (cedb != null) {
+							ce.setId(cedb.getId());
+							logger.info("Found one: " + cedb.getId());
+							contractEventRepository.save(ce);
+						}
+						contractEventRepository.save(ce);
+					}
+					// Long count = events.getLimit() * events.getOffset() + events.getLimit();
+					offset += 50;
+				} else {
 					read = false;
 				}
-				offset += 200;
 			} catch (Exception e) {
 				read = false;
 			}
 		}
-		contractsRepository.saveAll(events.getResults());
 	}
 	
 	private String read(String path) {
@@ -47,13 +67,27 @@ public class ContractEventsServiceImpl implements ContractEventsService {
 		p.setHttpMethod("GET");
 		p.setPath(path);
 		try {
-			//String json = apiHelper.fetchFromApi(p);
-			return null;
+			String json = apiHelper.fetchFromApi(p);
+			return json;
 		} catch (Exception e) {
 			return null;
 		}
 	}
 
+	private VoteEvent deserialise(String hex)
+			throws JsonMappingException, JsonProcessingException {
+		try {
+			String param = "/to-json/" + hex;
+			String json = apiHelper.cvConversion(param);
+			VoteEventWrapper typeValue = (VoteEventWrapper) mapper.readValue(json, new TypeReference<VoteEventWrapper>() {});
+			if (typeValue.getValue() == null)
+				return null;
+			return VoteEvent.fromClarity(typeValue.getValue());
+		} catch (Exception e) {
+			logger.error("deserialise: ", e);
+			return null;
+		}
+	}
 
 //	@Override
 //	public MintEventsBean getMintEvents(String contractId, String assetName, int offset, int limit, boolean unanchored, boolean tx_metadata) {

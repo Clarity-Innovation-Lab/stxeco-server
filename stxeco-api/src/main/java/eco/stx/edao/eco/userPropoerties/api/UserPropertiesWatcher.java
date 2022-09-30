@@ -110,6 +110,7 @@ public class UserPropertiesWatcher {
 	
 	private DaoPropertyTypeValue deserialise(String functionName, String contractId, String json) throws JsonMappingException, JsonProcessingException {
 		ReadResult contractRead = (ReadResult)mapper.readValue(json, new TypeReference<ReadResult>() {});
+		if (contractRead.getResult() == null) return null;
 		String param = "/to-json/" + contractRead.getResult();
 		json = apiHelper.cvConversion(param);
 		if (json.indexOf("response") > -1) {

@@ -30,7 +30,7 @@ public class Proposal {
 	private int executedAt;
 	private int funding;
 	private int emergencySignals;
-	private String status;
+	private Status status;
 	private String title;
 	private String description;
 	private String votingContract;

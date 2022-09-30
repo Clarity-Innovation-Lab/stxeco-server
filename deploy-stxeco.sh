@@ -35,6 +35,12 @@ if [ "$SERVICE" == "stxeco_api" ]; then
 	$DOCKER_CMD tag mijoco/stxeco_api  mijoco/stxeco_api
 	$DOCKER_CMD push mijoco/stxeco_api:latest
 fi
+if [ "$SERVICE" == "stacks_voice_express" ]; then
+  mvn -f ./stxeco-api/pom.xml -Dmaven.test.skip=true clean install
+	docker-compose build stacks_voice_express
+	$DOCKER_CMD tag mijoco/stacks_voice_express  mijoco/stacks_voice_express
+	$DOCKER_CMD push mijoco/stacks_voice_express:latest
+fi
 
 echo --- stxeco:copying to [ $PATH_DEPLOY ] --------------------------------------------------------------------------------;
 printf "\n\n Connectiong to $SERVER.\n"

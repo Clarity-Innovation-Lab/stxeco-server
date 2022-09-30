@@ -1,6 +1,7 @@
 stacks:
   dao:
-    deployer: ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM
+    deployer: ST167Z6WFHMV0FZKFCRNWZ33WTB0DFBCW9M1FW3AY
+    deployer2: ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM
 eco-stx:
   security:
     enable-csrf: false
@@ -18,7 +19,7 @@ eco-stx:
     fee-list: https://bitcoinfees.earn.com/api/v1/fees/list
   stax:
     stacks-path-primary: http://docker.for.mac.localhost
-    stacks-path-secondary: https://localhost
+    stacks-path-secondary: https://stacks-node-api.testnet.stacks.co
     admin-contract-address: ST1ESYCGJB5Z5NBHS39XPC70PGC14WAQK5XXNQYDW
     admin-contract-name: appmap-v1
     daojsapi: http://docker.for.mac.localhost:8280

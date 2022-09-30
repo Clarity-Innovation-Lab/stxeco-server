@@ -48,3 +48,10 @@ services:
       - OPENNODE_API_KEY_SM=${OPENNODE_API_KEY_SM}
     ports:
       - "8280:8080"
+  stacks_voice_express:
+    image: mijoco/stacks_voice_express:latest
+    container_name: "stacks_voice_express"
+    ports:
+      - "8282:8080"
+    links:
+      - mongodb

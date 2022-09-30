@@ -1,0 +1,43 @@
+stacks-voice:
+  security:
+    enable-csrf: false
+stacks-voice:
+  mongo:
+    mongoIp: mongodb://mongodb
+    mongoPort: 27017
+    mongoDbName: edaovoice
+
+---
+spring:
+  profiles: test
+stacks-voice:
+  mongo:
+    mongoIp: mongodb://localhost
+
+---
+spring:
+  profiles: linux-dev
+stacks-voice:
+  mongo:
+    mongoIp: mongodb://localhost
+
+---
+spring:
+  profiles: docker-dev
+stacks-voice:
+  mongo:
+    mongoIp: mongodb://localhost
+
+---
+spring:
+  profiles: staging
+stacks-voice:
+  mongo:
+    mongoIp: mongodb://mongodb
+
+---
+spring:
+  profiles: production
+stacks-voice:
+  mongo:
+    mongoIp: mongodb://mongodb

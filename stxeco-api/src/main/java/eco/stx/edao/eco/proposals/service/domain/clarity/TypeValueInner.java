@@ -15,7 +15,7 @@ import lombok.ToString;
 @ToString
 @NoArgsConstructor
 @AllArgsConstructor
-@TypeAlias(value = "TypeValueInner")
+@TypeAlias(value = "VoteEventWrapper")
 public class TypeValueInner {
 
 	public String type;

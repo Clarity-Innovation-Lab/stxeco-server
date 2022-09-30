@@ -18,6 +18,6 @@ import lombok.ToString;
 @TypeAlias(value = "ApiValueBean")
 public class ApiValueBean {
 
-    private String hex;
+	private String hex;
     private String repr;
 }

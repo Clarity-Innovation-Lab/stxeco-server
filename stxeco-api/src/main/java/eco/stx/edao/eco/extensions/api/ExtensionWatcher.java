@@ -42,8 +42,8 @@ public class ExtensionWatcher {
 			"ede004-emergency-execute", 
 			"ede005-dev-fund", 
 			"ede006-treasury", 
-			"ede007-snapshot-proposal-voting", 
-			"ede008-funded-proposal-submission",
+			"ede007-snapshot-proposal-voting-v2", 
+			"ede008-funded-proposal-submission-v2",
 			"ede009-governance-token-sale"
 	};
 	
@@ -115,6 +115,7 @@ public class ExtensionWatcher {
 	
 	private boolean deserialise(String functionName, String contractId, String json) throws JsonMappingException, JsonProcessingException {
 		ReadResult contractRead = (ReadResult)mapper.readValue(json, new TypeReference<ReadResult>() {});
+		if (contractRead.getResult() == null) return false;
 		String param = "/to-json/" + contractRead.getResult();
 		json = apiHelper.cvConversion(param);
 		ExtensionTypeValue typeValue = (ExtensionTypeValue)mapper.readValue(json, new TypeReference<ExtensionTypeValue>() {});

@@ -79,6 +79,7 @@ public class ApiHelper {
 
 	public ProposalData deserialise(String functionName, String contractId, String json) throws JsonMappingException, JsonProcessingException {
 		ReadResult contractRead = (ReadResult)mapper.readValue(json, new TypeReference<ReadResult>() {});
+		if (contractRead.getResult() == null) return null;
 		String param = "/to-json/" + contractRead.getResult();
 		json = cvConversion(param);
 		TypeValue typeValue = (TypeValue)mapper.readValue(json, new TypeReference<TypeValue>() {});

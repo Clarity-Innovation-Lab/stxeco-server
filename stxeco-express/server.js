@@ -471,6 +471,7 @@ app.get("/daojsapi/extension-data/:address/:name", (req, res) => {
 });
 app.get("/daojsapi/contract-principal/:address/:name", (req, res) => {
   const ip = req.headers["x-forwarded-for"] || req.socket.remoteAddress;
+  console.log('/daojsapi/contract-principal/:address/:name=' +req.params.address);
   const contractCV = contractPrincipalCV(req.params.address, req.params.name);
   const contractCVS = serializeCV(contractCV);
   const contractCVSH = contractCVS.toString("hex");
@@ -483,10 +484,10 @@ app.get("/daojsapi/contract-principal/:address/:name", (req, res) => {
 });
 app.get("/daojsapi/uint/:param", (req, res) => {
   const ip = req.headers["x-forwarded-for"] || req.socket.remoteAddress;
+  console.log('/daojsapi/uint/:param=' +req.params.param);
   const contractCV = uintCV(req.params.param);
   const contractCVS = serializeCV(contractCV);
   const contractCVSH = contractCVS.toString("hex");
-  console.log(ip); // ip address of the user
   if (ip.indexOf(ALLOWED_IP) > -1) {
     res.send(contractCVSH);
   } else {
@@ -495,10 +496,10 @@ app.get("/daojsapi/uint/:param", (req, res) => {
 });
 app.get("/daojsapi/principal/:address", (req, res) => {
   const ip = req.headers["x-forwarded-for"] || req.socket.remoteAddress;
+  console.log('/daojsapi/principal/:address=' +req.params.address);
   const contractCV = standardPrincipalCV(req.params.address);
   const contractCVS = serializeCV(contractCV);
   const contractCVSH = contractCVS.toString("hex");
-  console.log(ip); // ip address of the user
   if (ip.indexOf(ALLOWED_IP) > -1) {
     res.send(contractCVSH);
   } else {
@@ -507,9 +508,9 @@ app.get("/daojsapi/principal/:address", (req, res) => {
 });
 app.get("/daojsapi/string-ascii/:param", (req, res) => {
   const ip = req.headers["x-forwarded-for"] || req.socket.remoteAddress;
+  console.log('/daojsapi/string-ascii/:param=' +req.params.param);
   const param = stringAsciiCV(req.params.param);
   const buffer = serializeCV(param).toString("hex");
-  console.log(ip); // ip address of the user
   if (ip.indexOf(ALLOWED_IP) > -1) {
     res.send(buffer);
   } else {
@@ -518,18 +519,22 @@ app.get("/daojsapi/string-ascii/:param", (req, res) => {
 });
 app.get("/daojsapi/to-json/:result", (req, res) => {
   const ip = req.headers["x-forwarded-for"] || req.socket.remoteAddress;
-  const result = cvToJSON(deserializeCV(req.params.result));
-  console.log(ip); // ip address of the user
-  if (ip.indexOf(ALLOWED_IP) > -1) {
-    res.send(result);
-  } else {
+  if (!req.params.result) {
     res.sendStatus(401);
+  } else {
+    console.log('/daojsapi/to-json/:result=' +req.params.result);
+    const result = cvToJSON(deserializeCV(req.params.result));
+    if (ip.indexOf(ALLOWED_IP) > -1) {
+      res.send(result);
+    } else {
+      res.sendStatus(401);
+    }
   }
 });
 
 app.get("/daojsapi/signme/:assetHash", (req, res) => {
   const ip = req.headers["x-forwarded-for"] || req.socket.remoteAddress;
-  console.log(ip); // ip address of the user
+  console.log('/daojsapi/signme/:assetHash=' +req.params.assetHash);
   if (ip.indexOf(ALLOWED_IP) > -1) {
     const sig = signPayloadEC(req.params.assetHash, SIGNER_PRIKEY);
     res.send(sig);

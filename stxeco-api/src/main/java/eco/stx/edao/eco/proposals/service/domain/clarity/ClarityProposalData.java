@@ -23,6 +23,7 @@ public class ClarityProposalData {
 	public CTypeValue concluded;
 	public CTypeValue passed;
 	public CTypeValue proposer;
+	@JsonProperty("custom-majority") public CTypeValue customMajority;
 	@JsonProperty("end-block-height") public CTypeValue endBlockHeight;
 	@JsonProperty("start-block-height") public CTypeValue startBlockHeight;
 	@JsonProperty("votes-against") public CTypeValue votesAgainst;
