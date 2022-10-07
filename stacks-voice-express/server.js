@@ -125,7 +125,7 @@ app.get("/svapi/v1/threads", (req, res) => {
     if (err) return handleDbErr(err, res, 'error getting threads');
     // console.log('thread before: ', threads);
     res.send(threads);
-  });
+  }).sort({ timestamp: -1 });
 });
 app.post("/svapi/v1/thread",
   runAsyncWrapper(async (req, res) => {

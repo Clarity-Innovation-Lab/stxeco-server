@@ -1,11 +1,12 @@
-package eco.stx.edao.contracts.service.domain;
+package eco.stx.edao.nft.api.model;
+
+import java.util.List;
 
 import org.springframework.data.annotation.Id;
 import org.springframework.data.annotation.TypeAlias;
 import org.springframework.data.mongodb.core.mapping.Document;
 
 import lombok.AllArgsConstructor;
-import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -13,17 +14,20 @@ import lombok.ToString;
 
 @Getter
 @Setter
-@Builder
 @ToString
 @AllArgsConstructor
 @NoArgsConstructor
-@TypeAlias(value = "NFTHoldingEvent")
+@TypeAlias(value = "Sip016NFTMetaData")
 @Document
-public class ContractEvent {
+public class Sip016NFTMetaData {
 
 	@Id private String id;
-    private Integer event_index;
-    private String event_type;
-    private ContractLog contract_log;
-    private VoteEvent voteEvent;
+	private String version;
+	private String name;
+	private String description;
+	private String image;
+	private List<Sip016Trait> attributes;
+	private Sip016Properties properties;
+	private Sip016Localisation localization;
+
 }

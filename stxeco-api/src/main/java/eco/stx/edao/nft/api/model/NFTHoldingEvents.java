@@ -1,4 +1,4 @@
-package eco.stx.edao.contracts.service.domain;
+package eco.stx.edao.nft.api.model;
 
 import java.util.List;
 
@@ -18,10 +18,10 @@ import lombok.ToString;
 @AllArgsConstructor
 @NoArgsConstructor
 @TypeAlias(value = "NFTHoldingEvents")
-public class ContractEvents {
+public class NFTHoldingEvents {
 
     private Long total;
     private Long limit;
     private Long offset;
-    private List<ContractEvent> results;
+    private List<NFTHoldingEvent> results;
 }
