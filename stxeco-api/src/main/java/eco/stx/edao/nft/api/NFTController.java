@@ -61,6 +61,7 @@ public class NFTController {
 	private static final String HTTPS_HASHONE_MYPINATA_CLOUD_IPFS = "https://hashone.mypinata.cloud/ipfs/";
 	private static final String ID = "{id}";
 	private static final String IPFS = "ipfs://";
+	private static final String IPFS2 = "ipfs/";
 	private static Map<String, String> assetIdMap = new HashMap<String, String>();
 
 	@GetMapping(value = "/v2/nft/{stxAddress}/{offset}/{limit}")
@@ -110,7 +111,10 @@ public class NFTController {
 		if (tokenUri == null) return null;
 		if (tokenUri.startsWith(IPFS)) {
 			tokenUri = tokenUri.replace(IPFS, HTTPS_HASHONE_MYPINATA_CLOUD_IPFS);
-		} 
+		} else if (tokenUri.startsWith(IPFS2)) {
+			tokenUri = tokenUri.replace(IPFS2, HTTPS_HASHONE_MYPINATA_CLOUD_IPFS);
+		}
+		
 		if (tokenUri.indexOf(ID) > -1) {
 			tokenUri = tokenUri.replace(ID, tokenId);
 		} else {
@@ -131,6 +135,8 @@ public class NFTController {
 			Sip016NFTMetaData metaData = (Sip016NFTMetaData) mapper.readValue(json, new TypeReference<Sip016NFTMetaData>() {});
 			if (metaData.getImage().startsWith(IPFS)) {
 				metaData.setImage(metaData.getImage().replace(IPFS, HTTPS_HASHONE_MYPINATA_CLOUD_IPFS));
+			} else if (metaData.getImage().startsWith(IPFS2)) {
+				metaData.setImage(metaData.getImage().replace(IPFS2, HTTPS_HASHONE_MYPINATA_CLOUD_IPFS));
 			}
 			return metaData;
 		} catch (Exception e) {

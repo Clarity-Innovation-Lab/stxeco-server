@@ -4,12 +4,11 @@
 
 export SERVICE=$1
 export DEPLOYMENT=$2
+export PORT=22
 export SERVER=popper.brightblock.org
 if [ "$DEPLOYMENT" == "prod" ]; then
   SERVER=chomsky.brightblock.org;
-fi
-if [ "$DEPLOYMENT" == "chomsky" ]; then
-  SERVER=chomsky.brightblock.org;
+  PORT=7019
 fi
 export DOCKER_ID_USER='mijoco'
 export DOCKER_COMPOSE_CMD='docker-compose'
@@ -46,7 +45,7 @@ echo --- stxeco:copying to [ $PATH_DEPLOY ] ------------------------------------
 printf "\n\n Connectiong to $SERVER.\n"
 
 if [ -z "${SERVICE}" ]; then
-ssh -i ~/.ssh/id_rsa -p 22 bob@$SERVER "
+ssh -i ~/.ssh/id_rsa -p $PORT bob@$SERVER "
   cd /home/bob/hubgit/stxeco-server
   # git pull
   # cp .env.production .env
@@ -58,7 +57,7 @@ ssh -i ~/.ssh/id_rsa -p 22 bob@$SERVER "
   docker compose -f docker-compose-images.yml up -d
 ";
 else
-ssh -i ~/.ssh/id_rsa -p 22 bob@$SERVER "
+ssh -i ~/.ssh/id_rsa -p $PORT bob@$SERVER "
   cd /home/bob/hubgit/stxeco-server
   cat .env
   docker login
