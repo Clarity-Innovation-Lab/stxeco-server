@@ -1,10 +1,10 @@
-package eco.stx.edao.eco.proposals.api.model;
+package eco.stx.edao.pinata.api.model;
 
-import java.util.List;
+import java.io.File;
 
+import org.json.JSONObject;
 import org.springframework.data.annotation.TypeAlias;
 
-import eco.stx.edao.eco.api.model.Contract;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -19,9 +19,8 @@ import lombok.ToString;
 @NoArgsConstructor
 @AllArgsConstructor
 @TypeAlias(value = "PinataFile")
-public class ProposalContracts {
+public class PinataFile {
 
-	public int limit;
-	public int offset;
-	public List<Contract> results;
+	public JSONObject metaData;
+	public File file;
 }

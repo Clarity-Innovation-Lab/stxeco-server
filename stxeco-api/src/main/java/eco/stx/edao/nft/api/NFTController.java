@@ -2,7 +2,9 @@ package eco.stx.edao.nft.api;
 
 import java.math.BigInteger;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -64,10 +66,26 @@ public class NFTController {
 	private static final String IPFS2 = "ipfs/";
 	private static Map<String, String> assetIdMap = new HashMap<String, String>();
 
-	@GetMapping(value = "/v2/nft/{stxAddress}/{offset}/{limit}")
-	public NFTHoldingEvents countByContract(@PathVariable String stxAddress, @PathVariable Long offset, @PathVariable Long limit) throws JsonProcessingException {
+	@GetMapping(value = "/v2/nft/assets/{stxAddress}")
+	public Set<String> identifiers(@PathVariable String stxAddress) throws JsonProcessingException {
 		NFTHoldingEvents events = null;
-		events = fetchHoldings(stxAddress, limit, offset);
+		long offset = 0;
+		long limit = 50;
+		Set<String> holdings = new HashSet<String>();
+		do {
+			events = fetchHoldings(stxAddress, null, limit, offset);
+			for (NFTHoldingEvent event : events.getResults()) {
+				holdings.add(event.getAsset_identifier());
+			}
+			offset += 50;
+		}  while (events.getTotal() > offset);
+		return holdings;
+	}
+		
+	@GetMapping(value = "/v2/nft/{stxAddress}/{assetId}/{offset}/{limit}")
+	public NFTHoldingEvents holdings(@PathVariable String stxAddress, @PathVariable String assetId, @PathVariable Long offset, @PathVariable Long limit) throws JsonProcessingException {
+		NFTHoldingEvents events = null;
+		events = fetchHoldings(stxAddress, assetId, limit, offset);
 		for (NFTHoldingEvent event : events.getResults()) {
 			populate(event, stxAddress);
 		}
@@ -146,8 +164,9 @@ public class NFTController {
 	}
 
 	@Cacheable
-	private NFTHoldingEvents fetchHoldings(String stxAddress, Long limit, Long offset) throws JsonProcessingException {
+	private NFTHoldingEvents fetchHoldings(String stxAddress, String assetId, Long limit, Long offset) throws JsonProcessingException {
 		String path = "/extended/v1/tokens/nft/holdings?principal=" + stxAddress + "&limit" + limit + "&offset=" + offset;
+		if (assetId != null) path += "&asset_identifiers=" + assetId;
 		ApiFetchConfig p = new ApiFetchConfig();
 		p.setHttpMethod("GET");
 		p.setPath(path);

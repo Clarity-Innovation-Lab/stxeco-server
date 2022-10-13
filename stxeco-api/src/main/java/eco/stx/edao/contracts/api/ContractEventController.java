@@ -71,17 +71,23 @@ public class ContractEventController {
 	
 	@GetMapping(value = "/v2/contract/events")
 	public void contractEvents() {
-		readEvents();
+		readEvents(0l);
+	}
+	
+	@GetMapping(value = "/v2/contract/events/recent")
+	public void contractEventsRecent() {
+		Optional<Long> offsetO = contractEventRepository.countByContract_id(contractAddress + "." + snapshotVoting);
+		readEvents(offsetO.get());
 	}
 	
 	@Scheduled(fixedDelay=180000) // every 3 mins
 	public void readContractEvents() throws JsonProcessingException {
-		readEvents();
+		readEvents(0l);
 	}
 
-	private void readEvents() {
+	private void readEvents(Long offset) {
 		try {
-			contractEventsService.consumeContractEvents(contractAddress + "." + snapshotVoting);
+			contractEventsService.consumeContractEvents(contractAddress + "." + snapshotVoting, offset);
 		} catch (JsonMappingException e) {
 			e.printStackTrace();
 		} catch (JsonProcessingException e) {

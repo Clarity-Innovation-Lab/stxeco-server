@@ -27,14 +27,14 @@ public interface ContractEventRepository extends MongoRepository<ContractEvent, 
 	@Query(value = "{ 'voteEvent.proposal' : ?#{[0]} }")
 	List<ContractEvent> findByProposal(String proposal);
 
-	@Query(value = "{ 'contract_log.contract_id' : ?#{[0]}, 'voteEvent.proposal' : ?#{[0]} }")
+	@Query(value = "{ 'contract_log.contract_id' : ?#{[0]}, 'voteEvent.proposal' : ?#{[1]} }")
 	List<ContractEvent> findByContract_idAndProposal(String contract_id, String proposal);
 
-	@Query(value = "{ 'voteEvent.proposal' : ?#{[0]}, 'voteEvent.voter' : ?#{[0]} }")
+	@Query(value = "{ 'voteEvent.proposal' : ?#{[0]}, 'voteEvent.voter' : ?#{[1]} }")
 	List<ContractEvent> findByProposalAndVoter(String proposal, String voter);
 
 	// Count queries
-	@Query(value = "{ 'contract_log.contract_id' : ?#{[0]}, 'voteEvent.proposal' : ?#{[0]} }", count = true)
+	@Query(value = "{ 'contract_log.contract_id' : ?#{[0]}, 'voteEvent.proposal' : ?#{[1]} }", count = true)
 	Optional<Long> countByContract_idAndProposal(String contract_id, String proposal);
 
 	@Query(value = "{ 'voteEvent.proposal' : ?#{[0]} }", count = true)

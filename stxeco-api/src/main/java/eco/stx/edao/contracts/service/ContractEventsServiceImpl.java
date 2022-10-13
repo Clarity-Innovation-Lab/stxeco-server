@@ -25,13 +25,9 @@ public class ContractEventsServiceImpl implements ContractEventsService {
 	@Autowired private ObjectMapper mapper;
 	@Autowired private ContractEventRepository contractEventRepository;
 
-	@Override public void consumeContractEvents(String contractId) throws JsonMappingException, JsonProcessingException {
-		//Optional<Long> offsetO = contractEventRepository.countByContract_id(contractId);
-		long offset = 0;
-		//if (offsetO.isPresent()) offset = offsetO.get();
-		String path = "/extended/v1/contract/" + contractId + "/events?limit=50&offset=";
+	@Override public void consumeContractEvents(String contractId, Long offset) throws JsonMappingException, JsonProcessingException {
+		String path = "/extended/v1/contract/" + contractId + "/events?unanchored=true&limit=50&offset=";
 		boolean read = true;
-		// contractEventRepository.deleteByContract_id(contractId);
 		ContractEvents events = null;
 		while (read) {
 			String json = read(path + offset);
@@ -42,7 +38,6 @@ public class ContractEventsServiceImpl implements ContractEventsService {
 						if (ce.getContract_log().getValue().getRepr().indexOf("vote") > -1) {
 							ce.setVoteEvent(deserialise(ce.getContract_log().getValue().getHex()));
 						}
-						// events.getResults().add(ce);
 						ContractEvent cedb = contractEventRepository.findOneByHex(ce.getContract_log().getValue().getHex());
 						if (cedb != null) {
 							ce.setId(cedb.getId());

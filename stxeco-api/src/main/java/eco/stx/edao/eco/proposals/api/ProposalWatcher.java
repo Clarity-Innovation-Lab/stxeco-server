@@ -40,16 +40,12 @@ import eco.stx.edao.stacks.model.transactions.TransactionFromApiBean;
 public class ProposalWatcher {
 
 	private static final Logger logger = LogManager.getLogger(ProposalWatcher.class);
-	@Autowired
-	private ApiHelper apiHelper;
-	@Autowired
-	private ObjectMapper mapper;
-	@Autowired
-	private ProposerRepository proposerRepository;
-	@Autowired
-	private ProposalRepository proposalRepository;
-	@Value("${stacks.dao.deployer}")
-	String deployer;
+	@Autowired private ApiHelper apiHelper;
+	@Autowired private ObjectMapper mapper;
+	@Autowired private ProposerRepository proposerRepository;
+	@Autowired private ProposalRepository proposalRepository;
+	@Value("${stacks.dao.deployer}") String deployer;
+	private @Value("${stacks.dao.dao-core-contract}") String coreContractName;
 	private static String snapshotVoting = "ede007-snapshot-proposal-voting-v2";
 	private static String proposalVoting = "ede001-proposal-voting";
 	private static String fundedSubmission = "ede008-funded-proposal-submission-v2";
@@ -164,7 +160,7 @@ public class ProposalWatcher {
 		boolean allowed = true;
 		String contractAddress = contractId.split("\\.")[0];
 		String contractName = contractId.split("\\.")[1];
-		if (contractName.equals("executor-dao")) {
+		if (contractName.equals(coreContractName)) {
 			allowed = false;
 		}
 		Proposer p = proposerRepository.findByStxAddress(contractAddress);
@@ -354,7 +350,7 @@ public class ProposalWatcher {
 			if (!p.getContract().getTxStatus().equals("success"))
 				return;
 			String contractAddress = p.getContractId().split("\\.")[0];
-			String contractName = "executor-dao"; // p.getContractId().split("\\.")[1];
+			String contractName = coreContractName; // p.getContractId().split("\\.")[1];
 			String functionName = "executed-at";
 			String param = "/contract-principal/" + contractAddress + "/" + p.getContractId().split("\\.")[1];
 			String arg0 = apiHelper.cvConversion(param);

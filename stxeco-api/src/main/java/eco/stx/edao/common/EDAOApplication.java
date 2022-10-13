@@ -28,6 +28,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 
 import eco.stx.edao.github.service.GitHubHelper;
+import eco.stx.edao.pinata.service.PinataHelper;
 import eco.stx.edao.stacks.ApiHelper;
 import eco.stx.edao.stacks.service.ClarityDeserialiser;
 import eco.stx.edao.stacks.service.ClaritySerialiser;
@@ -82,6 +83,11 @@ public class EDAOApplication {
 	@Bean
 	public GitHubHelper gitHubHelper() throws IOException {
 		return new GitHubHelper();
+	}
+
+	@Bean
+	public PinataHelper pinataHelper() throws IOException {
+		return new PinataHelper();
 	}
 
 	@Bean

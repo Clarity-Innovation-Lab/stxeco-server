@@ -2,6 +2,7 @@ stacks:
   dao:
     deployer: ST167Z6WFHMV0FZKFCRNWZ33WTB0DFBCW9M1FW3AY
     deployer2: ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM
+    dao-core-contract: executor-dao
 eco-stx:
   security:
     enable-csrf: false
@@ -70,7 +71,8 @@ application:
   mongoPort: 27017
 stacks:
   dao:
-    deployer: SP167Z6WFHMV0FZKFCRNWZ33WTB0DFBCW9QRVJ627
+    deployer: SP3JP0N1ZXGASRJ0F7QAHWFPGTVK9T2XNXDB908Z
+    dao-core-contract: ecosystem-dao
 eco-stx:
   stax:
     stacks-path-primary: http://45.79.131.55

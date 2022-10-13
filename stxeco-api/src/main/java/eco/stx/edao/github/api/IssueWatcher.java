@@ -41,9 +41,13 @@ public class IssueWatcher {
 
 	@Scheduled(fixedDelay=3600000)
 	public void processProposals() throws IOException {
-		GitHub gitHub = gitHubHelper.setup();
-		this.gHRepository = gitHub.getRepository(REPO);
-		filterIssues(gHRepository.getIssues(GHIssueState.OPEN));
+		try {
+			GitHub gitHub = gitHubHelper.setup();
+			this.gHRepository = gitHub.getRepository(REPO);
+			filterIssues(gHRepository.getIssues(GHIssueState.OPEN));
+		} catch (Exception e) {
+			logger.error("Unble to connect to github", e);
+		}
 		// filterPulls(repo.getPullRequests(GHIssueState.OPEN));
 	}
 	

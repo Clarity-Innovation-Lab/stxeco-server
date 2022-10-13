@@ -31,6 +31,8 @@ public class ExtensionWatcher {
 
     private static final Logger logger = LogManager.getLogger(ExtensionWatcher.class);
 	private @Value("${stacks.dao.deployer}") String contractAddress;
+	private @Value("${stacks.dao.dao-core-contract}") String coreContractName;
+	
 	@Autowired private ApiHelper apiHelper;
 	@Autowired private ObjectMapper mapper;
 	@Autowired private ExtensionRepository extensionRepository;
@@ -49,7 +51,7 @@ public class ExtensionWatcher {
 	
 	@Scheduled(fixedDelay=3600000)
 	public void processExtensions() throws JsonProcessingException {
-		// ApiFetchConfig path = new ApiFetchConfig("GET", "/extended/v1/contract/by_trait?trait_abi=" + GitHubHelper.encodeValue(ExtensionTrait.trait), null);
+		// ApiFetchConfig path = new ApiFetchConfig("GET", "/extended/v1/contract/by_trait?trait_abi=" + PinataHelper.encodeValue(ExtensionTrait.trait), null);
 		for (String extension : EXTENSIONS) {
 			ApiFetchConfig path = new ApiFetchConfig("GET", "/extended/v1/contract/" + contractAddress + "." + extension, null);
 			try {
@@ -98,7 +100,7 @@ public class ExtensionWatcher {
 	@Async
 	private void checkExtensionSubmission(Extension ext) throws JsonProcessingException {
 		String contractAddress = ext.getContract().getContractId().split("\\.")[0];
-		String contractName = "executor-dao"; // p.getContractId().split("\\.")[1];
+		String contractName = coreContractName; // p.getContractId().split("\\.")[1];
 		String functionName = "is-extension";
 		String param = "/contract-principal/" + contractAddress + "/" + ext.getContract().getContractId().split("\\.")[1];
 		String arg0 = apiHelper.cvConversion(param);

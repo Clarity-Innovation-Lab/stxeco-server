@@ -33,4 +33,29 @@ public class NFTHoldingEvent {
     private Sip016NFTMetaData metaData;
     private ApiValueBean value;
     
+	@Override
+	public int hashCode() {
+		final int prime = 31;
+		int result = 1;
+		result = prime * result + ((asset_identifier == null) ? 0 : asset_identifier.hashCode());
+		return result;
+	}
+	
+	@Override
+	public boolean equals(Object obj) {
+		if (this == obj)
+			return true;
+		if (obj == null)
+			return false;
+		if (getClass() != obj.getClass())
+			return false;
+		NFTHoldingEvent other = (NFTHoldingEvent) obj;
+		if (asset_identifier == null) {
+			if (other.asset_identifier != null)
+				return false;
+		} else if (!asset_identifier.equals(other.asset_identifier))
+			return false;
+		return true;
+	}
+    
 }

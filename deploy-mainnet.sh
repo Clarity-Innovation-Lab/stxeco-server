@@ -3,7 +3,6 @@
 ############################################################
 
 export SERVICE=$1
-export DEPLOYMENT=$2
 export PORT=7019
 export SERVER=chomsky.brightblock.org
 export DOCKER_ID_USER='mijoco'
@@ -50,9 +49,9 @@ ssh -i ~/.ssh/id_rsa -p $PORT bob@$SERVER "
   cat .env
   docker login
   . ~/.profile
-  docker compose -f docker-compose-images.yml pull
-  docker compose -f docker-compose-images.yml down
-  docker compose -f docker-compose-images.yml up -d
+  $DOCKER_COMPOSE_CMD -f docker-compose-images.yml pull
+  $DOCKER_COMPOSE_CMD -f docker-compose-images.yml down
+  $DOCKER_COMPOSE_CMD -f docker-compose-images.yml up -d
 ";
 else
 ssh -i ~/.ssh/id_rsa -p $PORT bob@$SERVER "
@@ -60,11 +59,11 @@ ssh -i ~/.ssh/id_rsa -p $PORT bob@$SERVER "
   cat .env
   docker login
   . ~/.profile
-  docker compose -f docker-compose-images.yml pull  
-  docker compose -f docker-compose-images.yml stop $SERVICE
-  docker compose -f docker-compose-images.yml rm $SERVICE 
-  docker compose -f docker-compose-images.yml create $SERVICE
-  docker compose -f docker-compose-images.yml start $SERVICE
+  $DOCKER_COMPOSE_CMD -f docker-compose-images.yml pull  
+  $DOCKER_COMPOSE_CMD -f docker-compose-images.yml stop $SERVICE
+  $DOCKER_COMPOSE_CMD -f docker-compose-images.yml rm $SERVICE 
+  $DOCKER_COMPOSE_CMD -f docker-compose-images.yml create $SERVICE
+  $DOCKER_COMPOSE_CMD -f docker-compose-images.yml start $SERVICE
 ";
 fi
 
