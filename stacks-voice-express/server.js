@@ -20,6 +20,7 @@ const tolerance = Number(process.env.TIMESTAMP_TOLERANCE) || 120000;
 console.log('PUBLIC_APP_VERSION:' + process.env.PUBLIC_APP_VERSION)
 console.log('PUBLIC_APP_NAME:' + process.env.PUBLIC_APP_NAME)
 console.log('TIMESTAMP_TOLERANCE:' + process.env.TIMESTAMP_TOLERANCE)
+console.log('PUBLIC_NETWORK:' + process.env.PUBLIC_NETWORK)
 /**
 client.connect(config.DB, function(err, db) {
     if(err) {
