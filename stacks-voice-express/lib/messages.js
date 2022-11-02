@@ -8,7 +8,7 @@ import { verify_structured_data_signature } from "./structured-data.js";
 export const domain = {
 	name: process.env.PUBLIC_APP_NAME || 'Stacks Voice',
 	version: process.env.PUBLIC_APP_VERSION || '1.0.0',
-	'chain-id': process.env.PUBLIC_NETWORK === "mainnet" ? ChainID.Mainnet : ChainID.Testnet,
+	'chain-id': ChainID.Mainnet // process.env.PUBLIC_NETWORK === "mainnet" ? ChainID.Mainnet : ChainID.Testnet,
 };
 
 export const domainCV = tupleCV({

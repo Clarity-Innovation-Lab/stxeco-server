@@ -50,6 +50,7 @@ public class ApiHelper {
 	@Value("${eco-stx.stax.daojsapi}") String daojsapi;
 	private static final String port1 = ":20443";
 	private static final String port2 = ":3999";
+	private static final boolean MY_NODE_FIRST = false;
 
 	public static String encodeValue(String value) {
 	    try {
@@ -104,19 +105,36 @@ public class ApiHelper {
 	public String fetchFromApi(ApiFetchConfig principal) throws JsonProcessingException {
 		ResponseEntity<String> response = null;
 		String url = getUrl(principal, true);
-		try {
-			if (principal.getHttpMethod() != null && principal.getHttpMethod().equalsIgnoreCase("POST")) {
-				response = restTemplate.exchange(url, HttpMethod.POST, getRequestEntity(principal), String.class);
-			} else {
-				response = restTemplate.exchange(url, HttpMethod.GET, getRequestEntity(principal), String.class);
+		if (MY_NODE_FIRST) {
+			try {
+				if (principal.getHttpMethod() != null && principal.getHttpMethod().equalsIgnoreCase("POST")) {
+					response = restTemplate.exchange(url, HttpMethod.POST, getRequestEntity(principal), String.class);
+				} else {
+					response = restTemplate.exchange(url, HttpMethod.GET, getRequestEntity(principal), String.class);
+				}
+			} catch (Exception e) {
+				logger.error("Unable to fetch from url=" + url + "\n e=" + e.getMessage());
+				try {
+					response = getRespFromStacks(principal);
+				} catch (Exception e1) {
+					logger.error("Unable to fetch from url=" + stacksPathSecondary + principal.getPath() + "\n e1=" + e1.getMessage());
+				}
 			}
-		} catch (Exception e) {
-			logger.error("Unable to fetch from url=" + url + "\n e=" + e.getMessage());
+		} else {
 			try {
 				response = getRespFromStacks(principal);
-			} catch (Exception e1) {
-				logger.error("Unable to fetch from url=" + stacksPathSecondary + principal.getPath() + "\n e1=" + e1.getMessage());
+			} catch (Exception e) {
+				try {
+					if (principal.getHttpMethod() != null && principal.getHttpMethod().equalsIgnoreCase("POST")) {
+						response = restTemplate.exchange(url, HttpMethod.POST, getRequestEntity(principal), String.class);
+					} else {
+						response = restTemplate.exchange(url, HttpMethod.GET, getRequestEntity(principal), String.class);
+					}
+				} catch (Exception e1) {
+					logger.error("Unable to fetch from url=" + stacksPathSecondary + principal.getPath() + "\n e1=" + e1.getMessage());
+				}
 			}
+
 		}
 		if (response != null && response.getStatusCode() == HttpStatus.OK) {
 			return response.getBody();

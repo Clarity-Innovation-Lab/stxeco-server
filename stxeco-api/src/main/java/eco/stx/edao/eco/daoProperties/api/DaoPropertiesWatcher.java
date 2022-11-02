@@ -34,7 +34,7 @@ public class DaoPropertiesWatcher {
 	@Value("${stacks.dao.deployer}") String contractAddress;
 	private static String governanceTokenContract = "ede000-governance-token";
 	private static String proposalSubmissionContract = "ede002-threshold-proposal-submission";
-	private static String fundedSubmissionContract = "ede008-funded-proposal-submission-v2";
+	private static String fundedSubmissionContract = "ede008-funded-proposal-submission-v3";
 	private static String emergencyExecute = "ede004-emergency-execute";
 
 

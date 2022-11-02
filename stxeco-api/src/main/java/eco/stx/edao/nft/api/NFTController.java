@@ -60,8 +60,13 @@ public class NFTController {
 	@Autowired private ApiHelper apiHelper;
 	@Autowired private ObjectMapper mapper;
 	@Autowired private RestOperations restTemplate;
+	// https://arweave.net/Z4ygyXm-fERGzKEB2bvE7gx98SHcoaP8qdZQo0Kxm6Y/2.png
+	// https://arweave.net/II4z2ziYyqG7-kWDa98lWGfjxRdYOx9Zdld9P_I_kzE/2.json
+	private static final String HTTPS_ARWEAVE_CLOUD = "https://arweave.net/";
 	private static final String HTTPS_HASHONE_MYPINATA_CLOUD_IPFS = "https://hashone.mypinata.cloud/ipfs/";
 	private static final String ID = "{id}";
+	private static final String ARW1 = "ar://";
+	private static final String ARW2 = "ar/";
 	private static final String IPFS = "ipfs://";
 	private static final String IPFS2 = "ipfs/";
 	private static Map<String, String> assetIdMap = new HashMap<String, String>();
@@ -94,15 +99,19 @@ public class NFTController {
 		
 	private void populate(NFTHoldingEvent event, String stxAddress) {
 		try {
-			String tokenUri = assetIdMap.get(event.getAsset_identifier());
+			if (event.getAsset_identifier().indexOf("bns::names") > -1) return;
+			Map<String, String> tokenIdMap = getTokenId(event.getValue());
+			String tokenUri = null; //assetIdMap.get(event.getAsset_identifier());
 			if (tokenUri == null) {
-				tokenUri = readTokenUri(event.getAsset_identifier().split("::")[0], stxAddress);
+				tokenUri = readTokenUri(event.getAsset_identifier().split("::")[0], stxAddress, tokenIdMap.get("tokenId"));
 				assetIdMap.put(event.getAsset_identifier(), tokenUri);
 			}
-			event.setTokenIdMap(getTokenId(event.getValue()));
-			tokenUri = normaliseTokenUri(event.getTokenIdMap().get("tokenId"), tokenUri);
+			event.setTokenIdMap(tokenIdMap);
+			tokenUri = normaliseTokenUri(tokenIdMap.get("tokenId"), tokenUri);
 			event.setToken_uri(tokenUri);
-			if (tokenUri.indexOf("thisisnumberone") == -1) event.setMetaData(readMetaData(tokenUri));
+			if (tokenUri.indexOf("thisisnumberone") == -1) {
+				event.setMetaData(readMetaData(tokenUri));
+			}
 		} catch (Exception e) {
 			logger.error("Error populating event: ", event);
 		}
@@ -111,14 +120,23 @@ public class NFTController {
 	private Map<String, String> getTokenId(ApiValueBean value) {
 		Map<String, String> map = new HashMap<String, String>();
 		if (value.getRepr().indexOf("tuple") > -1) {
-		    String part1 = value.getRepr().split("owner ")[1];
-    	    part1 = part1.split("\\)")[0];
-    	    if (part1.startsWith("'")) part1 = part1.substring(1);
-    	    String part2 = value.getRepr().split("token-id ")[1];
-    	    part2 = part2.split("'")[0].substring(1);
-    	    part2 = part2.split("\\)")[0];
-			map.put("owner", part1);
-			map.put("tokenId", part2);
+			if (value.getRepr().indexOf("namespace") > -1) {
+			    String part1 = value.getRepr().split("name ")[1];
+	    	    part1 = part1.split("\\)")[0];
+	    	    String part2 = value.getRepr().split("namespace ")[1];
+	    	    part2 = part2.split("\\)")[0];
+				map.put("name", part1);
+				map.put("namespace", part2);
+			} else {
+			    String part1 = value.getRepr().split("owner ")[1];
+	    	    part1 = part1.split("\\)")[0];
+	    	    if (part1.startsWith("'")) part1 = part1.substring(1);
+	    	    String part2 = value.getRepr().split("token-id ")[1];
+	    	    part2 = part2.split("'")[0].substring(1);
+	    	    part2 = part2.split("\\)")[0];
+				map.put("owner", part1);
+				map.put("tokenId", part2);
+			}
 		} else {
 			map.put("tokenId", value.getRepr().substring(1));
 		}
@@ -131,13 +149,24 @@ public class NFTController {
 			tokenUri = tokenUri.replace(IPFS, HTTPS_HASHONE_MYPINATA_CLOUD_IPFS);
 		} else if (tokenUri.startsWith(IPFS2)) {
 			tokenUri = tokenUri.replace(IPFS2, HTTPS_HASHONE_MYPINATA_CLOUD_IPFS);
+		} else if (tokenUri.startsWith(ARW1)) {
+			tokenUri = tokenUri.replace(ARW1, HTTPS_ARWEAVE_CLOUD);
+		} else if (tokenUri.startsWith(ARW2)) {
+			tokenUri = tokenUri.replace(ARW2, HTTPS_ARWEAVE_CLOUD);
 		}
 		
 		if (tokenUri.indexOf(ID) > -1) {
 			tokenUri = tokenUri.replace(ID, tokenId);
-		} else {
-			if (!tokenUri.endsWith("/")) tokenUri = tokenUri + "/";
+		} else if (tokenUri.endsWith("/1.json")) {
+			// tokenUri = tokenUri.replace("/1.json", ("/" + tokenId + ".json"));
+		} else if (tokenUri.endsWith("/")) {
+			// tokenUri = tokenUri + tokenId + ".json";
+		} else if (!tokenUri.endsWith("/") && !tokenUri.endsWith("json")) {
+			tokenUri = tokenUri + "/";
 			tokenUri = tokenUri + tokenId + ".json";
+		}
+		if (tokenUri.indexOf("ipfs/ipfs") > -1) {
+			tokenUri = tokenUri.replace("ipfs/ipfs", "ipfs");
 		}
 		return tokenUri;
 	}
@@ -155,6 +184,13 @@ public class NFTController {
 				metaData.setImage(metaData.getImage().replace(IPFS, HTTPS_HASHONE_MYPINATA_CLOUD_IPFS));
 			} else if (metaData.getImage().startsWith(IPFS2)) {
 				metaData.setImage(metaData.getImage().replace(IPFS2, HTTPS_HASHONE_MYPINATA_CLOUD_IPFS));
+			} else if (tokenUri.startsWith(ARW1)) {
+				metaData.setImage(metaData.getImage().replace(ARW1, HTTPS_ARWEAVE_CLOUD));
+			} else if (tokenUri.startsWith(ARW2)) {
+				metaData.setImage(metaData.getImage().replace(ARW2, HTTPS_ARWEAVE_CLOUD));
+			}
+			if (metaData.getImage().indexOf("ipfs/ipfs") > -1) {
+				metaData.setImage(metaData.getImage().replace("ipfs/ipfs", "ipfs"));
 			}
 			return metaData;
 		} catch (Exception e) {
@@ -176,14 +212,14 @@ public class NFTController {
 	}
 	
 	@Cacheable
-	private String readTokenUri(String contractId, String stxAddress) throws JsonProcessingException {
+	private String readTokenUri(String contractId, String stxAddress, String tokenId) throws JsonProcessingException {
 		try {
 //			Application a = applicationRepository.findByContractId(contractId);
 //			if (checkTokenContract && a.getTokenContract().getTokenUri() != null) {
 //				return a.getTokenContract().getTokenUri();
 //			}
 			SIP009FunctionNames fname = SIP009FunctionNames.GET_TOKEN_URI;
-			String arg1 = claritySerialiser.serialiseUInt(BigInteger.valueOf(1));
+			String arg1 = claritySerialiser.serialiseUInt(BigInteger.valueOf(Long.parseLong(tokenId)));
 			String[] arguments = new String[] {arg1};
 			String path = path(contractId, fname.getName());
 			ApiFetchConfig p = new ApiFetchConfig();

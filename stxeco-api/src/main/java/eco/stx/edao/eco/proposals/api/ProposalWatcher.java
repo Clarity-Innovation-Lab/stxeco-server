@@ -46,9 +46,9 @@ public class ProposalWatcher {
 	@Autowired private ProposalRepository proposalRepository;
 	@Value("${stacks.dao.deployer}") String deployer;
 	private @Value("${stacks.dao.dao-core-contract}") String coreContractName;
-	private static String snapshotVoting = "ede007-snapshot-proposal-voting-v2";
+	private static String snapshotVoting = "ede007-snapshot-proposal-voting-v3";
 	private static String proposalVoting = "ede001-proposal-voting";
-	private static String fundedSubmission = "ede008-funded-proposal-submission-v2";
+	private static String fundedSubmission = "ede008-funded-proposal-submission-v3";
 	private static String emergencyExecute = "ede004-emergency-execute";
 
 	// @Scheduled(fixedDelay=3600000)

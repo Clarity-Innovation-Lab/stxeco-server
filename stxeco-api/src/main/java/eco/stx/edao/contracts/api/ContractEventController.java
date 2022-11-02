@@ -27,7 +27,7 @@ public class ContractEventController {
 	private @Value("${stacks.dao.deployer}") String contractAddress;
 	@Autowired private ContractEventsService contractEventsService;
 	@Autowired private ContractEventRepository contractEventRepository;
-	private static String snapshotVoting = "ede007-snapshot-proposal-voting-v2";
+	private static String snapshotVoting = "ede007-snapshot-proposal-voting-v3";
 
 	@GetMapping(value = "/v2/events/count/contract/{contractId}")
 	public Optional<Long> countByContract(@PathVariable String contractId) {
