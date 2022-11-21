@@ -43,9 +43,9 @@ public class ExtensionWatcher {
 			"ede003-emergency-proposals", 
 			"ede004-emergency-execute", 
 			"ede005-dev-fund", 
-			"ede006-treasury", 
-			"ede007-snapshot-proposal-voting-v3", 
-			"ede008-funded-proposal-submission-v3",
+			"ede006-treasury",
+			"ede007-snapshot-proposal-voting-v5", 
+			"ede008-funded-proposal-submission-v5",
 			"ede009-governance-token-sale"
 	};
 	
