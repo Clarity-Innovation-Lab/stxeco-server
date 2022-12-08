@@ -19,6 +19,7 @@
     "elliptic": "^6.5.4",
     "express": "^4.16.1",
     "jsontokens": "^3.0.0",
+    "micro-stacks": "^1.1.4",
     "sha.js": "^2.4.11"
   },
   "devDependencies": {

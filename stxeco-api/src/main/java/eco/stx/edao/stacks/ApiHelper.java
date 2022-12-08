@@ -154,6 +154,18 @@ public class ApiHelper {
 		}
 	}
 	
+	public String getDirect(ApiFetchConfig principal) {
+		ResponseEntity<String> response = null;
+		String url = principal.getPath();
+		try {
+			response = restTemplate.exchange(url, HttpMethod.GET, getRequestEntity(principal), String.class);
+			return response.getBody();
+		} catch (Exception e) {
+			logger.error("Unable to fetch from url=" + url + principal.getPath() + "\n e1=" + e.getMessage());
+			return null;
+		}
+	}
+	
 	private ResponseEntity<String> getRespFromStacks(ApiFetchConfig principal) {
 		String url = stacksPathSecondary + principal.getPath();
 		if (principal.getHttpMethod() != null && principal.getHttpMethod().equalsIgnoreCase("POST")) {

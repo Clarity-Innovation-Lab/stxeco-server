@@ -1,4 +1,4 @@
-package eco.stx.edao.contracts.service.domain;
+package eco.stx.edao.twoone.method1;
 
 import java.util.List;
 
@@ -17,11 +17,12 @@ import lombok.ToString;
 @ToString
 @AllArgsConstructor
 @NoArgsConstructor
-@TypeAlias(value = "ContractEvent")
-public class ContractEvents {
+@TypeAlias(value = "Method1DataWrapper")
+public class Method1DataWrapper {
 
-    private Long total;
-    private Long limit;
-    private Long offset;
-    private List<ContractEvent> results;
+	private List<Method1Vote> list;
+    private Integer page;
+    private Integer page_total;
+    private Integer pagesize;
+    private Integer total_count;
 }

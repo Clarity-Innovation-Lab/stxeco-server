@@ -1,4 +1,4 @@
-package eco.stx.edao.contracts.service.domain;
+package eco.stx.edao.twoone.method2;
 
 import java.util.List;
 
@@ -17,11 +17,11 @@ import lombok.ToString;
 @ToString
 @AllArgsConstructor
 @NoArgsConstructor
-@TypeAlias(value = "ContractEvent")
-public class ContractEvents {
+@TypeAlias(value = "TwoOneEvents")
+public class TwoOneEvents {
 
     private Long total;
     private Long limit;
     private Long offset;
-    private List<ContractEvent> results;
+    private List<TwoOneEvent> results;
 }

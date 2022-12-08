@@ -2,6 +2,7 @@
 const BigNum = require("bn.js");
 const axios = require("axios");
 
+const { c32ToB58, b58ToC32 } = require("micro-stacks/crypto");
 const { StacksTestnet, StacksMainnet } = require("@stacks/network");
 const {
   uintCV,
@@ -457,78 +458,52 @@ app.get("/", (req, res) => {
   res.send("hi there...");
 });
 
+app.get("/daojsapi/btctostx/:address", (req, res) => {
+  res.send(b58ToC32(req.params.address));
+});
+app.get("/daojsapi/stxtobtc/:address", (req, res) => {
+  res.send(c32ToB58(req.params.address));
+});
 app.get("/daojsapi/extension-data/:address/:name", (req, res) => {
-  const ip = req.headers["x-forwarded-for"] || req.socket.remoteAddress;
   const contractCV = contractPrincipalCV(req.params.address, req.params.name);
   const contractCVS = serializeCV(contractCV);
   const contractCVSH = contractCVS.toString("hex");
-  console.log(ip); // ip address of the user
-  if (ip.indexOf(ALLOWED_IP) > -1) {
-    res.send(contractCVSH);
-  } else {
-    res.sendStatus(401);
-  }
+  res.send(contractCVSH);
 });
 app.get("/daojsapi/contract-principal/:address/:name", (req, res) => {
-  const ip = req.headers["x-forwarded-for"] || req.socket.remoteAddress;
   console.log('/daojsapi/contract-principal/:address/:name=' +req.params.address);
   const contractCV = contractPrincipalCV(req.params.address, req.params.name);
   const contractCVS = serializeCV(contractCV);
   const contractCVSH = contractCVS.toString("hex");
-  console.log(ip); // ip address of the user
-  if (ip.indexOf(ALLOWED_IP) > -1) {
-    res.send(contractCVSH);
-  } else {
-    res.sendStatus(401);
-  }
+  res.send(contractCVSH);
 });
 app.get("/daojsapi/uint/:param", (req, res) => {
-  const ip = req.headers["x-forwarded-for"] || req.socket.remoteAddress;
   console.log('/daojsapi/uint/:param=' +req.params.param);
   const contractCV = uintCV(req.params.param);
   const contractCVS = serializeCV(contractCV);
   const contractCVSH = contractCVS.toString("hex");
-  if (ip.indexOf(ALLOWED_IP) > -1) {
-    res.send(contractCVSH);
-  } else {
-    res.sendStatus(401);
-  }
+  res.send(contractCVSH);
 });
 app.get("/daojsapi/principal/:address", (req, res) => {
-  const ip = req.headers["x-forwarded-for"] || req.socket.remoteAddress;
   console.log('/daojsapi/principal/:address=' +req.params.address);
   const contractCV = standardPrincipalCV(req.params.address);
   const contractCVS = serializeCV(contractCV);
   const contractCVSH = contractCVS.toString("hex");
-  if (ip.indexOf(ALLOWED_IP) > -1) {
-    res.send(contractCVSH);
-  } else {
-    res.sendStatus(401);
-  }
+  res.send(contractCVSH);
 });
 app.get("/daojsapi/string-ascii/:param", (req, res) => {
-  const ip = req.headers["x-forwarded-for"] || req.socket.remoteAddress;
   console.log('/daojsapi/string-ascii/:param=' +req.params.param);
   const param = stringAsciiCV(req.params.param);
   const buffer = serializeCV(param).toString("hex");
-  if (ip.indexOf(ALLOWED_IP) > -1) {
-    res.send(buffer);
-  } else {
-    res.sendStatus(401);
-  }
+  res.send(buffer);
 });
 app.get("/daojsapi/to-json/:result", (req, res) => {
-  const ip = req.headers["x-forwarded-for"] || req.socket.remoteAddress;
   if (!req.params.result) {
     res.sendStatus(401);
   } else {
     console.log('/daojsapi/to-json/:result=' +req.params.result);
     const result = cvToJSON(deserializeCV(req.params.result));
-    if (ip.indexOf(ALLOWED_IP) > -1) {
-      res.send(result);
-    } else {
-      res.sendStatus(401);
-    }
+    res.send(result);
   }
 });
 

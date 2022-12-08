@@ -22,7 +22,6 @@ eco-stx:
     stacks-path-primary: http://docker.for.mac.localhost
     stacks-path-secondary: https://stacks-node-api.testnet.stacks.co
     admin-contract-address: ST1ESYCGJB5Z5NBHS39XPC70PGC14WAQK5XXNQYDW
-    admin-contract-name: appmap-v1
     daojsapi: http://docker.for.mac.localhost:8280
 
 ---
@@ -60,7 +59,6 @@ eco-stx:
     stacks-path-primary: http://23.239.9.92
     stacks-path-secondary: https://stacks-node-api.testnet.stacks.co
     admin-contract-address: ST1NXBK3K5YYMD6FD41MVNP3JS1GABZ8TRVX023PT
-    admin-contract-name: appmap-v1
     daojsapi: http://stxeco_express:8080
 
 ---
@@ -78,5 +76,4 @@ eco-stx:
     stacks-path-primary: http://45.79.131.55
     stacks-path-secondary: https://stacks-node-api.mainnet.stacks.co
     admin-contract-address: SP3QSAJQ4EA8WXEDSRRKMZZ29NH91VZ6C5X88FGZQ
-    admin-contract-name: appmap-v1
     daojsapi: http://stxeco_express:8080

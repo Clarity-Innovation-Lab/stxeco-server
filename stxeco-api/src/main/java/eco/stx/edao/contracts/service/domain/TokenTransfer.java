@@ -1,7 +1,5 @@
 package eco.stx.edao.contracts.service.domain;
 
-import java.util.List;
-
 import org.springframework.data.annotation.TypeAlias;
 
 import lombok.AllArgsConstructor;
@@ -17,11 +15,10 @@ import lombok.ToString;
 @ToString
 @AllArgsConstructor
 @NoArgsConstructor
-@TypeAlias(value = "ContractEvent")
-public class ContractEvents {
+@TypeAlias(value = "TokenTransfer")
+public class TokenTransfer {
 
-    private Long total;
-    private Long limit;
-    private Long offset;
-    private List<ContractEvent> results;
+	private String recipient_address;
+    private String memo;
+    private String amount;
 }

@@ -1,6 +1,4 @@
-package eco.stx.edao.contracts.service.domain;
-
-import java.util.List;
+package eco.stx.edao.twoone.method1;
 
 import org.springframework.data.annotation.TypeAlias;
 
@@ -17,11 +15,10 @@ import lombok.ToString;
 @ToString
 @AllArgsConstructor
 @NoArgsConstructor
-@TypeAlias(value = "ContractEvent")
-public class ContractEvents {
+@TypeAlias(value = "Method1Output")
+public class Method1Output {
 
-    private Long total;
-    private Long limit;
-    private Long offset;
-    private List<ContractEvent> results;
+    private String[] addresses;
+    private Long value;
+    private String type;
 }
