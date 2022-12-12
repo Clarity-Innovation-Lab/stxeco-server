@@ -130,7 +130,7 @@ public class TwoOneEventsServiceImpl implements TwoOneEventsService {
 			for (TwoOneEvent votePerAddress : events) {
 				if (votePerAddress.getStxBalance().getLocked() > 0) {
 					vd.setLockedAtHeight(votePerAddress.getStxBalance().getQuery_height());
-					if (votePerAddress.getBlock_height() < CYCLE_46_START) {
+					if (votePerAddress.getBlock_height() < CYCLE_46_START || votePerAddress.getBlock_height() > CYCLE_47_END) {
 						earlyVotes++;
 					} else {
 						if (!counted) {

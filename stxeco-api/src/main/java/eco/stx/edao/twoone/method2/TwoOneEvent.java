@@ -19,7 +19,7 @@ import lombok.ToString;
 @ToString
 @AllArgsConstructor
 @NoArgsConstructor
-@TypeAlias(value = "Method1VoteCount")
+@TypeAlias(value = "TwoOneEvent")
 @Document
 public class TwoOneEvent {
 
